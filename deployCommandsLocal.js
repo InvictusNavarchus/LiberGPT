@@ -1,6 +1,7 @@
 require('dotenv').config()
 const { REST, Routes } = require('discord.js');
-const { BOT_ID, GUILD_ID, TOKEN } = process.env
+const { BOT_ID, TOKEN } = process.env
+const guildList = require('./guildList.json')
 const fs = require('node:fs');
 const path = require('node:path');
 
@@ -31,9 +32,9 @@ for (const folder of commandFolders) {
 const rest = new REST().setToken(TOKEN);
 
 // and deploy your commands!
-(async () => {
+async function deployCommands(GUILD_NAME, GUILD_ID) {
 	try {
-		console.log(`Started refreshing ${commands.length} application (/) commands on guild ${GUILD_ID}.`);
+		console.log(`Started refreshing ${commands.length} application (/) commands on guild ${GUILD_NAME} (${GUILD_ID}).`);
 
 		// The put method is used to fully refresh all commands in the guild with the current set
 		const data = await rest.put(
@@ -46,4 +47,8 @@ const rest = new REST().setToken(TOKEN);
 		// And of course, make sure you catch and log any errors!
 		console.error(error);
 	}
-})();
+};
+
+for (let [GUILD_NAME, GUILD_ID] of Object.entries(guildList)) {
+	deployCommands(GUILD_NAME, GUILD_ID)
+}
