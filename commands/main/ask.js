@@ -30,11 +30,17 @@ export default {
         // Defer the reply since the API call might take some time.
         await interaction.deferReply();
 
-        // Get the long response from the LLM API.
+        console.log(`🔍 [ask] Calling API endpoint: ${apiEndpoint} with prompt length: ${prompt.length}`);
         const llmOutput = await fetchRequest(apiEndpoint, prompt);
+        console.log('📥 [ask] Received output from API.');
 
         // Split the output into message chunks if needed.
         const messages = splitMessage(llmOutput, 2000);
+        // debug message content length and the length of each message
+        console.log(`🧩 [ask] Original Output length: ${llmOutput.length}`);
+        console.log(`📏 [ask] Array length after split: ${messages.length}`);
+        messages.forEach((msg, i) => console.log(`📝 [ask] Message ${i + 1} length: ${msg.length}`));
+
 
         // Option 1: You can edit the deferred reply with the first chunk...
         await interaction.editReply(messages.shift());
