@@ -1,9 +1,10 @@
-require('dotenv').config()
-const { REST, Routes } = require('discord.js');
-const { BOT_ID, TOKEN } = process.env
-const guildList = require('./guildList.json')
-const fs = require('node:fs');
-const path = require('node:path');
+import 'dotenv/config';
+import { REST, Routes } from 'discord.js';
+import guildList from './guildList.json' assert { type: 'json' };
+import fs from 'node:fs';
+import path from 'node:path';
+
+const { BOT_ID, TOKEN } = process.env;
 
 const commands = [];
 // Grab all the command folders from the commands directory you created earlier
@@ -19,7 +20,7 @@ for (const folder of commandFolders) {
 	// Grab the SlashCommandBuilder#toJSON() output of each command's data for deployment
 	for (const file of commandFiles) {
 		const filePath = path.join(commandsPath, file);
-		const command = require(filePath);
+		const command = await import(filePath);
 		if ('data' in command && 'execute' in command) {
 			commands.push(command.data.toJSON());
 		} else {
@@ -50,5 +51,5 @@ async function deployCommands(GUILD_NAME, GUILD_ID) {
 };
 
 for (let [GUILD_NAME, GUILD_ID] of Object.entries(guildList)) {
-	deployCommands(GUILD_NAME, GUILD_ID)
+	deployCommands(GUILD_NAME, GUILD_ID);
 }

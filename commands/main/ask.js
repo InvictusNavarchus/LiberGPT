@@ -1,9 +1,10 @@
-const { SlashCommandBuilder } = require('discord.js');
-const baseEndpoint = 'https://api.zpi.my.id/v1/ai/'
-const splitMessage = require('../../helpers/splitMessage')
-const fetchRequest = require('../../helpers/fetchRequest')
+import { SlashCommandBuilder } from 'discord.js';
+import splitMessage from '../../helpers/splitMessage.js';
+import fetchRequest from '../../helpers/fetchRequest.js';
 
-module.exports = {
+const baseEndpoint = 'https://api.zpi.my.id/v1/ai/';
+
+export default {
     data: new SlashCommandBuilder()
         .setName('ask')
         .setDescription('Ask LiberGPT anything')

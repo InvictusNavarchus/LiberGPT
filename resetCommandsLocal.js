@@ -1,6 +1,7 @@
-require('dotenv').config()
-const { REST, Routes } = require('discord.js');
-const { APPLICATION_ID, GUILD_ID, TOKEN } = process.env
+import 'dotenv/config';
+import { REST, Routes } from 'discord.js';
+
+const { APPLICATION_ID, GUILD_ID, TOKEN } = process.env;
 
 // Construct and prepare an instance of the REST module
 const rest = new REST().setToken(TOKEN);
