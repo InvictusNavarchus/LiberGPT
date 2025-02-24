@@ -2,7 +2,11 @@ import 'dotenv/config';
 import fs from 'node:fs';
 import path from 'node:path';
 import { Client, Collection, GatewayIntentBits } from 'discord.js';
+import consoleStamp from 'console-stamp';
 const __dirname = import.meta.dirname;
+
+// Configure console-stamp
+consoleStamp(console, { format: ':date(HH:MM:ss)' });
 
 console.log('🚀 Starting the bot...');
 
