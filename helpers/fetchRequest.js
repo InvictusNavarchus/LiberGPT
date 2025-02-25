@@ -24,7 +24,9 @@ export default async function fetchRequest(endpoint, prompt) {
         console.log(`✅ [fetchRequest] Received response with status: ${response.status}`);
 
         if (!response.ok) {
-            throw new Error(`HTTP error! Status: ${response.status}`);
+            const errorResponse = await response.json();
+            const errorObject = JSON.stringify(errorResponse, null, 2);
+            throw new Error(`HTTP error! Error object: ${errorObject}`);
         }
 
         const responseJson = await response.json();
