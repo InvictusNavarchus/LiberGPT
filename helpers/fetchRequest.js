@@ -14,13 +14,13 @@ export default async function fetchRequest(endpoint, prompt) {
 
     try {
         console.log(`🚀 [fetchRequest] Sending request to: ${endpoint}`);
-        const response = await fetch(endpoint, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify(body)
-        });
+
+        const payload = JSON.stringify(body);
+        const headersList = { "Content-Type": "application/json" };
+        const requestOptions = { method: "POST", headers: headersList, body: payload };
+        console.log(requestOptions);
+        
+        const response = await fetch(endpoint, requestOptions);
         console.log(`✅ [fetchRequest] Received response with status: ${response.status}`);
 
         if (!response.ok) {
