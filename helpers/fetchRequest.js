@@ -22,7 +22,10 @@ export default async function fetchRequest(endpoint, prompt, model) {
         console.log(`🚀 [fetchRequest] Sending GET request to: ${fullUrl}`);
 
         const response = await fetch(fullUrl, { method: "GET" });
-        console.log(`✅ [fetchRequest] Received response with status: ${response.status}`);
+        console.log(`✅ [fetchRequest] HTTP Response Details:`);
+        console.log(`   - Status Code: ${response.status}`);
+        console.log(`   - Status Text: ${response.statusText}`);
+        console.log(`   - Headers: ${JSON.stringify(Object.fromEntries(response.headers), null, 2)}`);
 
         if (!response.ok) {
             console.log(`❌ [fetchRequest] HTTP Error Details:`);
