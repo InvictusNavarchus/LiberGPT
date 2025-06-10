@@ -36,7 +36,7 @@ export default {
 
     // Determine if the command is complex and should be deferred
     // Almost all commands that make API requests should be deferred
-    const needsDefer = ['breakout', 'create-breakout-rooms', 'end-breakout-rooms'].includes(command.data.name);
+    const needsDefer = ['ask'].includes(command.data.name);
 
     // Use safeReply helper with appropriate options
     await safeReply(interaction, async () => {
