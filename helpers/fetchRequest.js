@@ -51,7 +51,21 @@ export default async function fetchRequest(endpoint, prompt, model) {
 
         if (responseJson.code === 200 && responseJson.response && responseJson.response.content) {
             console.log(`🎉 [fetchRequest] Successfully retrieved content from ${model} response.`);
-            return responseJson.response.content;
+            
+            let content = responseJson.response.content;
+            
+            // Special handling for blackbox model - include references if available
+            if (model === 'blackbox' && responseJson.response.reference && responseJson.response.reference.length > 0) {
+                console.log(`📚 [fetchRequest] Found ${responseJson.response.reference.length} references from blackbox model.`);
+                
+                const references = responseJson.response.reference
+                    .map((ref, index) => `${index + 1}. [${ref.title}](${ref.link})`)
+                    .join('\n');
+                
+                content += '\n\n**References:**\n' + references;
+            }
+            
+            return content;
         } else {
             console.log('⚠️ [fetchRequest] Unexpected response format: "content" key not found.');
             return "Unexpected response format: 'content' key not found.";
