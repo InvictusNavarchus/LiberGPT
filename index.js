@@ -50,6 +50,7 @@ for (const file of eventFiles) {
 	}
 }
 
+console.log('🔑 Logging in...');
 client.login(token).then(() => {
 	console.log('✅ Bot logged in successfully!');
 }).catch(err => {
