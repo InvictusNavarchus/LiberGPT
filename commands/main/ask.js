@@ -2,30 +2,20 @@ import { SlashCommandBuilder } from 'discord.js';
 import splitMessage from '../../helpers/splitMessage.js';
 import fetchRequest from '../../helpers/fetchRequest.js';
 
-const baseEndpoint = 'https://api.zpi.my.id/v1/ai/';
+const baseEndpoint = 'https://api.zpi.my.id/v1/ai/copilot';
 
 export default {
     data: new SlashCommandBuilder()
         .setName('ask')
-        .setDescription('Ask LiberGPT anything')
+        .setDescription('Ask LiberGPT anything using Copilot AI')
         .addStringOption(option =>
             option.setName('prompt')
                 .setDescription('The content of your request')
-                .setRequired(true))
-        .addStringOption(option =>
-            option.setName('model')
-                .setDescription('LLM Model to use')
-                .setRequired(false)
-                .addChoices(
-                    { name: 'gpt-4o', value: 'gpt-4o' },
-                    { name: 'grok-2', value: 'grok-2' },
-                    { name: 'claude-3-sonnet', value: 'claude-3-sonnet' },
-                )),
+                .setRequired(true)),
 
     async execute(interaction) {
         const prompt = interaction.options.getString('prompt');
-        const model = interaction.options.getString('model') ?? 'gpt-4o';
-        const apiEndpoint = baseEndpoint + model;
+        const apiEndpoint = baseEndpoint;
 
         // Defer the reply since the API call might take some time.
         await interaction.deferReply();

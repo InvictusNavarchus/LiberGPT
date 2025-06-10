@@ -1,26 +1,18 @@
+/**
+ * Sends a GET request to the Copilot AI endpoint and returns the AI response content
+ * @param {string} endpoint - The base API endpoint URL
+ * @param {string} prompt - The user's prompt to send to the AI
+ * @returns {Promise<string>} The AI response content or error message
+ */
 export default async function fetchRequest(endpoint, prompt) {
-    const body = {
-        messages: [
-            {
-                role: "system",
-                content: "You are LiberGPT"
-            },
-            {
-                role: "user",
-                content: prompt
-            }
-        ]
-    };
-
     try {
-        console.log(`🚀 [fetchRequest] Sending request to: ${endpoint}`);
-
-        const payload = JSON.stringify(body);
-        const headersList = { "Content-Type": "application/json" };
-        const requestOptions = { method: "POST", headers: headersList, body: payload };
-        console.log(requestOptions);
+        // Encode the prompt for URL parameter
+        const encodedPrompt = encodeURIComponent(prompt);
+        const fullUrl = `${endpoint}?text=${encodedPrompt}`;
         
-        const response = await fetch(endpoint, requestOptions);
+        console.log(`🚀 [fetchRequest] Sending GET request to: ${fullUrl}`);
+
+        const response = await fetch(fullUrl, { method: "GET" });
         console.log(`✅ [fetchRequest] Received response with status: ${response.status}`);
 
         if (!response.ok) {
@@ -31,12 +23,12 @@ export default async function fetchRequest(endpoint, prompt) {
 
         const responseJson = await response.json();
 
-        if (responseJson.data && responseJson.data.choices) {
-            console.log('🎉 [fetchRequest] Successfully retrieved choices from response.');
-            return responseJson.data.choices.content;
+        if (responseJson.code === 200 && responseJson.response && responseJson.response.content) {
+            console.log('🎉 [fetchRequest] Successfully retrieved content from Copilot response.');
+            return responseJson.response.content;
         } else {
-            console.log('⚠️ [fetchRequest] Unexpected response format: "choices" key not found.');
-            return "Unexpected response format: 'choices' key not found.";
+            console.log('⚠️ [fetchRequest] Unexpected response format: "content" key not found.');
+            return "Unexpected response format: 'content' key not found.";
         }
     } catch (error) {
         console.log(`❌ [fetchRequest] Error: ${error.message}`);
