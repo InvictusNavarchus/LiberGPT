@@ -55,13 +55,7 @@ export default async function fetchRequest(endpoint, prompt, model) {
         }
     } catch (error) {
         console.log(`❌ [fetchRequest] Error occurred:`);
-        console.log(`   - Message: ${error.message}`);
-        console.log(`   - Name: ${error.name}`);
-        console.log(`   - Stack: ${error.stack}`);
-        if (error.cause) {
-            console.log(`   - Cause: ${JSON.stringify(error.cause, null, 2)}`);
-        }
-        console.log(`   - Full Error Object: ${JSON.stringify(error, Object.getOwnPropertyNames(error), 2)}`);
+        console.log(JSON.stringify(error, Object.getOwnPropertyNames(error), 2));
         return `An error occurred: ${error.message}`;
     }
 }
