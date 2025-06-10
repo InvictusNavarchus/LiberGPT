@@ -19,9 +19,12 @@ export default async function fetchRequest(endpoint, prompt, model) {
             fullUrl = `${endpoint}?text=${encodedPrompt}`;
         }
         
-        console.log(`🚀 [fetchRequest] Sending GET request to: ${fullUrl}`);
+        // Use CORS proxy to bypass connection issues
+        const proxiedUrl = `https://cors.fadel.web.id/${fullUrl}`;
+        
+        console.log(`🚀 [fetchRequest] Sending GET request to: ${proxiedUrl}`);
 
-        const response = await fetch(fullUrl, { method: "GET" });
+        const response = await fetch(proxiedUrl, { method: "GET" });
         console.log(`✅ [fetchRequest] HTTP Response Details:`);
         console.log(`   - Status Code: ${response.status}`);
         console.log(`   - Status Text: ${response.statusText}`);
