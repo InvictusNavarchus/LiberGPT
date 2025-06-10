@@ -1,5 +1,12 @@
 {
   "type": "module",
+  "scripts": {
+    "start": "node index.js",
+    "deploy:local": "node deployCommandsLocal.js",
+    "deploy:global": "node deployCommandsGlobal.js",
+    "reset:local": "node resetCommandsLocal.js",
+    "reset:global": "node resetCommandsGlobal.js"
+  },
   "dependencies": {
     "console-stamp": "^3.1.2",
     "discord.js": "^14.18.0",
