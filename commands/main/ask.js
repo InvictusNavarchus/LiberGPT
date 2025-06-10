@@ -2,26 +2,35 @@ import { SlashCommandBuilder } from 'discord.js';
 import splitMessage from '../../helpers/splitMessage.js';
 import fetchRequest from '../../helpers/fetchRequest.js';
 
-const baseEndpoint = 'https://api.zpi.my.id/v1/ai/copilot';
+const baseEndpoint = 'https://api.zpi.my.id/v1/ai/';
 
 export default {
     data: new SlashCommandBuilder()
         .setName('ask')
-        .setDescription('Ask LiberGPT anything using Copilot AI')
+        .setDescription('Ask LiberGPT anything')
         .addStringOption(option =>
             option.setName('prompt')
                 .setDescription('The content of your request')
-                .setRequired(true)),
+                .setRequired(true))
+        .addStringOption(option =>
+            option.setName('model')
+                .setDescription('LLM Model to use')
+                .setRequired(false)
+                .addChoices(
+                    { name: 'copilot', value: 'copilot' },
+                    { name: 'blackbox', value: 'blackbox' },
+                )),
 
     async execute(interaction) {
         const prompt = interaction.options.getString('prompt');
-        const apiEndpoint = baseEndpoint;
+        const model = interaction.options.getString('model') ?? 'copilot';
+        const apiEndpoint = baseEndpoint + (model === 'blackbox' ? 'blackbox-advanced' : 'copilot');
 
         // Defer the reply since the API call might take some time.
         await interaction.deferReply();
 
-        console.log(`🔍 [ask] Calling API endpoint: ${apiEndpoint} with prompt length: ${prompt.length}`);
-        const llmOutput = await fetchRequest(apiEndpoint, prompt);
+        console.log(`🔍 [ask] Calling API endpoint: ${apiEndpoint} with model: ${model} and prompt length: ${prompt.length}`);
+        const llmOutput = await fetchRequest(apiEndpoint, prompt, model);
         console.log('📥 [ask] Received output from API.');
 
         // Split the output into message chunks if needed.

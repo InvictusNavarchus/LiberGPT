@@ -1,14 +1,23 @@
 /**
- * Sends a GET request to the Copilot AI endpoint and returns the AI response content
+ * Sends a GET request to the AI endpoint and returns the AI response content
  * @param {string} endpoint - The base API endpoint URL
  * @param {string} prompt - The user's prompt to send to the AI
+ * @param {string} model - The AI model to use ('copilot' or 'blackbox')
  * @returns {Promise<string>} The AI response content or error message
  */
-export default async function fetchRequest(endpoint, prompt) {
+export default async function fetchRequest(endpoint, prompt, model) {
     try {
-        // Encode the prompt for URL parameter
         const encodedPrompt = encodeURIComponent(prompt);
-        const fullUrl = `${endpoint}?text=${encodedPrompt}`;
+        let fullUrl;
+
+        if (model === 'blackbox') {
+            // Blackbox requires additional parameters
+            const encodedSystemPrompt = encodeURIComponent("You are LiberGPT. A helpful Assistant");
+            fullUrl = `${endpoint}?text_prompt=${encodedPrompt}&system_prompt=${encodedSystemPrompt}&search_mode=false&think_mode=false`;
+        } else {
+            // Copilot endpoint
+            fullUrl = `${endpoint}?text=${encodedPrompt}`;
+        }
         
         console.log(`🚀 [fetchRequest] Sending GET request to: ${fullUrl}`);
 
@@ -24,7 +33,7 @@ export default async function fetchRequest(endpoint, prompt) {
         const responseJson = await response.json();
 
         if (responseJson.code === 200 && responseJson.response && responseJson.response.content) {
-            console.log('🎉 [fetchRequest] Successfully retrieved content from Copilot response.');
+            console.log(`🎉 [fetchRequest] Successfully retrieved content from ${model} response.`);
             return responseJson.response.content;
         } else {
             console.log('⚠️ [fetchRequest] Unexpected response format: "content" key not found.');
