@@ -25,9 +25,22 @@ export default async function fetchRequest(endpoint, prompt, model) {
         console.log(`✅ [fetchRequest] Received response with status: ${response.status}`);
 
         if (!response.ok) {
-            const errorResponse = await response.json();
-            const errorObject = JSON.stringify(errorResponse, null, 2);
-            throw new Error(`HTTP error! Error object: ${errorObject}`);
+            console.log(`❌ [fetchRequest] HTTP Error Details:`);
+            console.log(`   - Status Code: ${response.status}`);
+            console.log(`   - Status Text: ${response.statusText}`);
+            console.log(`   - Headers: ${JSON.stringify(Object.fromEntries(response.headers), null, 2)}`);
+            
+            let errorResponse;
+            try {
+                errorResponse = await response.json();
+                console.log(`   - Response Body: ${JSON.stringify(errorResponse, null, 2)}`);
+            } catch (parseError) {
+                const textResponse = await response.text();
+                console.log(`   - Response Body (text): ${textResponse}`);
+                errorResponse = { error: textResponse };
+            }
+            
+            throw new Error(`HTTP ${response.status} ${response.statusText}: ${JSON.stringify(errorResponse)}`);
         }
 
         const responseJson = await response.json();
