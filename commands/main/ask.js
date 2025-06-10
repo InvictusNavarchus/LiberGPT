@@ -1,6 +1,7 @@
 import { SlashCommandBuilder } from 'discord.js';
 import splitMessage from '../../helpers/splitMessage.js';
 import fetchRequest from '../../helpers/fetchRequest.js';
+import { replyOrEdit } from '../../helpers/safeReply.js';
 
 const baseEndpoint = 'https://api.zpi.my.id/v1/ai/';
 
@@ -21,13 +22,14 @@ export default {
                     { name: 'blackbox', value: 'blackbox' },
                 )),
 
+    /**
+     * Executes the ask command to interact with AI models
+     * @param {import('discord.js').ChatInputCommandInteraction} interaction - The Discord interaction
+     */
     async execute(interaction) {
         const prompt = interaction.options.getString('prompt');
         const model = interaction.options.getString('model') ?? 'copilot';
         const apiEndpoint = baseEndpoint + (model === 'blackbox' ? 'blackbox-advanced' : 'copilot');
-
-        // Defer the reply since the API call might take some time.
-        await interaction.deferReply();
 
         console.log(`🔍 [ask] Calling API endpoint: ${apiEndpoint} with model: ${model} and prompt length: ${prompt.length}`);
         const llmOutput = await fetchRequest(apiEndpoint, prompt, model);
@@ -40,9 +42,8 @@ export default {
         console.log(`📏 [ask] Array length after split: ${messages.length}`);
         messages.forEach((msg, i) => console.log(`📝 [ask] Message ${i + 1} length: ${msg.length}`));
 
-
-        // Option 1: You can edit the deferred reply with the first chunk...
-        await interaction.editReply(messages.shift());
+        // Use replyOrEdit to handle the first chunk appropriately based on interaction state
+        await replyOrEdit(interaction, messages.shift());
 
         if (messages.length === 0) { return }
         // ... and then send any additional chunks as follow-ups.

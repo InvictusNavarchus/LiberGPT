@@ -1,10 +1,15 @@
 import { SlashCommandBuilder } from 'discord.js';
+import { replyOrEdit } from '../../helpers/safeReply.js';
 
 export default {
 	data: new SlashCommandBuilder()
 		.setName('ping')
 		.setDescription('Replies with Pong!'),
+	/**
+	 * Executes the ping command
+	 * @param {import('discord.js').ChatInputCommandInteraction} interaction - The Discord interaction
+	 */
 	async execute(interaction) {
-		await interaction.reply('Pong!');
+		await replyOrEdit(interaction, 'Pong!');
 	},
 };
