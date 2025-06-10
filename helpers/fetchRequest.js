@@ -40,7 +40,7 @@ export default async function fetchRequest(endpoint, prompt, model) {
             return "Unexpected response format: 'content' key not found.";
         }
     } catch (error) {
-        console.log(`❌ [fetchRequest] Error: ${error.message}`);
-        return `An error occurred: ${error.message}`;
+        console.log(`❌ [fetchRequest] Error: ${error}`);
+        return `An error occurred: ${error}`;
     }
 }
