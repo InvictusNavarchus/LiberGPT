@@ -94,16 +94,25 @@ export default {
 			messages.forEach((msg, i) => console.log(`📝 [mention] Message ${i + 1} length: ${msg.length}`));
 
 			// Send the first message as a reply
-			await message.reply(messages.shift());
+			await message.reply({
+				content: messages.shift(),
+				allowedMentions: { parse: [] }
+			});
 
 			// Send any additional chunks as follow-up messages
 			for (const msg of messages) {
-				await message.channel.send(msg);
+				await message.channel.send({
+					content: msg,
+					allowedMentions: { parse: [] }
+				});
 			}
 
 		} catch (error) {
 			console.error('❌ [mention] Error processing mention:', error);
-			await message.reply('Sorry, I encountered an error while processing your request. Please try again later.');
+			await message.reply({
+				content: 'Sorry, I encountered an error while processing your request. Please try again later.',
+				allowedMentions: { parse: [] }
+			});
 		}
 	},
 };
