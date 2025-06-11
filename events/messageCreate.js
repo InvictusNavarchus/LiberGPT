@@ -38,11 +38,37 @@ async function buildPromptWithContext(message) {
 			if (referencedMessage) {
 				// Build context with the original message
 				let context = `[Replying to message from ${referencedMessage.author.username}]\n`;
-				context += `Original message: "${referencedMessage.content}"\n\n`;
+				context += `Original message: "${referencedMessage.content}"\n`;
+				
+				// Check for embeds in the original message
+				if (referencedMessage.embeds && referencedMessage.embeds.length > 0) {
+					context += `\nEmbeds in original message:\n`;
+					referencedMessage.embeds.forEach((embed, index) => {
+						context += `Embed ${index + 1}:\n`;
+						if (embed.title) context += `- Title: ${embed.title}\n`;
+						if (embed.description) context += `- Description: ${embed.description}\n`;
+						if (embed.url) context += `- URL: ${embed.url}\n`;
+						if (embed.author?.name) context += `- Author: ${embed.author.name}\n`;
+						if (embed.fields && embed.fields.length > 0) {
+							context += `- Fields:\n`;
+							embed.fields.forEach(field => {
+								context += `  * ${field.name}: ${field.value}\n`;
+							});
+						}
+						if (embed.footer?.text) context += `- Footer: ${embed.footer.text}\n`;
+						if (embed.timestamp) context += `- Timestamp: ${embed.timestamp}\n`;
+						if (embed.color) context += `- Color: #${embed.color.toString(16).padStart(6, '0')}\n`;
+						context += `\n`;
+					});
+				}
+				
 				context += `User's reply: "${userPrompt}"`;
 				
 				console.log(`🔗 [mention] Message is a reply to: ${referencedMessage.author.username}`);
 				console.log(`🔗 [mention] Original message: "${referencedMessage.content.substring(0, 100)}..."`);
+				if (referencedMessage.embeds && referencedMessage.embeds.length > 0) {
+					console.log(`🔗 [mention] Found ${referencedMessage.embeds.length} embed(s) in original message`);
+				}
 				
 				return context;
 			}
