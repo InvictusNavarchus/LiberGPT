@@ -39,18 +39,13 @@ async function safeReply(interaction, handler, options = {}) {
       }
     }
 
-    // Execute the handler function with timeout protection
+    // Execute the handler function without timeout to preserve Discord's thinking indicator
     try {
-      const handlerPromise = handler();
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Handler execution timeout')), 8000)
-      );
-      
-      await Promise.race([handlerPromise, timeoutPromise]);
+      await handler();
       return true;
     } catch (handlerError) {
       // Handle network errors in the command execution
-      if (handlerError.code === 'EAI_AGAIN' || handlerError.message === 'Handler execution timeout') {
+      if (handlerError.code === 'EAI_AGAIN') {
         console.error(`🌐 Network error during command execution: ${handlerError.message}`);
         
         // Try to notify the user if the connection is back
