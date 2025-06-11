@@ -5,6 +5,17 @@ import splitMessage from '../helpers/splitMessage.js';
 const baseEndpoint = 'https://api.zpi.my.id/v1/ai/copilot';
 
 /**
+ * Extracts the model type from the endpoint URL
+ * @param {string} endpoint - The API endpoint URL
+ * @returns {string} The model type ('copilot', 'blackbox', etc.)
+ */
+function getModelFromEndpoint(endpoint) {
+	if (endpoint.includes('/blackbox')) return 'blackbox';
+	if (endpoint.includes('/copilot')) return 'copilot';
+	return 'copilot'; // default fallback
+}
+
+/**
  * Builds a prompt with reply context if the message is a reply
  * @param {import('discord.js').Message} message - The Discord message
  * @returns {Promise<string>} The formatted prompt with context
@@ -63,16 +74,17 @@ export default {
 		// If there's no content after removing mentions, ignore
 		if (!prompt) return;
 
+		const model = getModelFromEndpoint(baseEndpoint);
 		console.log(`🔍 [mention] User ${message.author.tag} mentioned bot in ${message.guild?.name || 'DM'}`);
 		console.log(`🔍 [mention] Prompt: "${prompt}"`);
-		console.log(`🔍 [mention] Using copilot model`);
+		console.log(`🔍 [mention] Using ${model} model`);
 
 		try {
 			// Send typing indicator to show the bot is processing
 			await message.channel.sendTyping();
 
-			// Get AI response using copilot model
-			const llmOutput = await fetchRequest(baseEndpoint, prompt, 'copilot');
+			// Get AI response using the determined model
+			const llmOutput = await fetchRequest(baseEndpoint, prompt, model);
 			console.log('📥 [mention] Received output from API.');
 
 			// Split the output into message chunks if needed
