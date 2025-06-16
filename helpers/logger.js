@@ -1,7 +1,7 @@
-const winston = require('winston');
-const DailyRotateFile = require('winston-daily-rotate-file');
-const fs = require('fs');
-const path = require('path');
+import winston from 'winston';
+import DailyRotateFile from 'winston-daily-rotate-file';
+import fs from 'fs';
+import path from 'path';
 
 const logDir = 'logs';
 
@@ -37,4 +37,4 @@ const logger = winston.createLogger({
   ],
 });
 
-module.exports = logger;
+export default logger;
