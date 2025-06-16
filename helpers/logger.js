@@ -13,7 +13,11 @@ if (!fs.existsSync(logDir)) {
 const logger = winston.createLogger({
   levels: winston.config.npm.levels,
   format: winston.format.combine(
-    winston.format.timestamp({ format: 'HH:mm:ss' }),
+    winston.format.timestamp({ 
+      format: () => {
+        return new Date().toISOString().substr(11, 8); // Extract HH:mm:ss from UTC ISO string
+      }
+    }),
     winston.format.splat()
   ),
   transports: [
