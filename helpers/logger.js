@@ -14,8 +14,7 @@ const logger = winston.createLogger({
   levels: winston.config.npm.levels,
   format: winston.format.combine(
     winston.format.timestamp({ format: 'HH:mm:ss' }),
-    winston.format.splat(),
-    winston.format.simple()
+    winston.format.splat()
   ),
   transports: [
     new DailyRotateFile({
@@ -25,11 +24,11 @@ const logger = winston.createLogger({
       maxSize: '20m',
       maxFiles: '14d',
       level: 'debug',
+      format: winston.format.printf(info => `${info.timestamp} ${info.level}: ${info.message}`)
     }),
     new winston.transports.Console({
       level: 'debug',
       format: winston.format.combine(
-        winston.format.timestamp({ format: 'HH:mm:ss' }),
         winston.format.colorize(),
         winston.format.printf(info => `${info.timestamp} ${info.level}: ${info.message}`)
       ),
