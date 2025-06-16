@@ -24,7 +24,7 @@ const logger = winston.createLogger({
       zippedArchive: true,
       maxSize: '20m',
       maxFiles: '14d',
-      level: 'info',
+      level: 'debug',
     }),
     new winston.transports.Console({
       level: 'debug',
