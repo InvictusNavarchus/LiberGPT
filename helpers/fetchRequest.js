@@ -5,6 +5,8 @@
  * @param {string} model - The AI model to use ('copilot' or 'blackbox')
  * @returns {Promise<string>} The AI response content or error message
  */
+import logger from './logger.js';
+
 export default async function fetchRequest(endpoint, prompt, model) {
     try {
         const encodedPrompt = encodeURIComponent(prompt);
@@ -22,25 +24,21 @@ export default async function fetchRequest(endpoint, prompt, model) {
         // Use CORS proxy to bypass connection issues
         const proxiedUrl = `https://cors.fadel.web.id/${fullUrl}`;
         
-        console.log(`🚀 [fetchRequest] Sending GET request to: ${proxiedUrl}`);
+        logger.info(`[fetchRequest] Sending GET request to: ${proxiedUrl}`);
 
         const response = await fetch(proxiedUrl, { method: "GET" });
-        console.log(`✅ [fetchRequest] HTTP Response Details:`);
-        console.log(`   - Status Code: ${response.status}`);
-        console.log(`   - Status Text: ${response.statusText}`);
+        logger.info(`[fetchRequest] HTTP Response Details: Status Code: ${response.status}, Status Text: ${response.statusText}`);
 
         if (!response.ok) {
-            console.log(`❌ [fetchRequest] HTTP Error Details:`);
-            console.log(`   - Status Code: ${response.status}`);
-            console.log(`   - Status Text: ${response.statusText}`);
+            logger.error(`[fetchRequest] HTTP Error Details: Status Code: ${response.status}, Status Text: ${response.statusText}`);
             
             let errorResponse;
             try {
                 errorResponse = await response.json();
-                console.log(`   - Response Body: ${JSON.stringify(errorResponse, null, 2)}`);
+                logger.error(`[fetchRequest] Response Body: ${JSON.stringify(errorResponse, null, 2)}`);
             } catch (parseError) {
                 const textResponse = await response.text();
-                console.log(`   - Response Body (text): ${textResponse}`);
+                logger.error(`[fetchRequest] Response Body (text): ${textResponse}`);
                 errorResponse = { error: textResponse };
             }
             
@@ -50,13 +48,13 @@ export default async function fetchRequest(endpoint, prompt, model) {
         const responseJson = await response.json();
 
         if (responseJson.code === 200 && responseJson.response && responseJson.response.content) {
-            console.log(`🎉 [fetchRequest] Successfully retrieved content from ${model} response.`);
+            logger.info(`[fetchRequest] Successfully retrieved content from ${model} response.`);
             
             let content = responseJson.response.content;
             
             // Special handling for blackbox model - include references if available
             if (model === 'blackbox' && responseJson.response.reference && responseJson.response.reference.length > 0) {
-                console.log(`📚 [fetchRequest] Found ${responseJson.response.reference.length} references from blackbox model.`);
+                logger.info(`[fetchRequest] Found ${responseJson.response.reference.length} references from blackbox model.`);
                 
                 const references = responseJson.response.reference
                     .map((ref, index) => `${index + 1}. [${ref.title}](${ref.link})`)
@@ -67,12 +65,11 @@ export default async function fetchRequest(endpoint, prompt, model) {
             
             return content;
         } else {
-            console.log('⚠️ [fetchRequest] Unexpected response format: "content" key not found.');
+            logger.warn('[fetchRequest] Unexpected response format: "content" key not found.');
             return "Unexpected response format: 'content' key not found.";
         }
     } catch (error) {
-        console.log(`❌ [fetchRequest] Error occurred:`);
-        console.log(JSON.stringify(error, Object.getOwnPropertyNames(error), 2));
+        logger.error(`[fetchRequest] Error occurred: ${error.message}`, { error: JSON.stringify(error, Object.getOwnPropertyNames(error), 2) });
         return `An error occurred: ${error.message}`;
     }
 }

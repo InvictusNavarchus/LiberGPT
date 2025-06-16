@@ -1,4 +1,5 @@
 import { SlashCommandBuilder } from 'discord.js';
+import logger from '../../helpers/logger.js';
 import { replyOrEdit } from '../../helpers/safeReply.js';
 
 export default {

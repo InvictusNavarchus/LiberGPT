@@ -1,5 +1,6 @@
 import { Events, MessageFlags, CommandInteraction } from 'discord.js';
 import safeReply from '../helpers/safeReply.js';
+import logger from '../helpers/logger.js';
 
 export default {
   name: Events.InteractionCreate,
@@ -13,7 +14,7 @@ export default {
     const command = interaction.client.commands.get(interaction.commandName);
 
     if (!command) {
-      console.error(`No command matching ${interaction.commandName} was found.`);
+      logger.error(`No command matching ${interaction.commandName} was found.`);
       return;
     }
 
@@ -27,12 +28,7 @@ export default {
       return `${opt.name}=${value}`;
     });
 
-    console.log(`🔵 Command executed:
-    User: ${interaction.user.tag} (${interaction.user.id})
-    Guild: ${interaction.guild?.name} (${interaction.guild?.id})
-    Command: /${interaction.commandName}
-    Options: ${options.length ? options.join(', ') : 'none'}
-    Channel: ${interaction.channel?.name} (${interaction.channel?.id})`);
+    logger.info(`Command executed: User: ${interaction.user.tag} (${interaction.user.id}), Guild: ${interaction.guild?.name} (${interaction.guild?.id}), Command: /${interaction.commandName}, Options: ${options.length ? options.join(', ') : 'none'}, Channel: ${interaction.channel?.name} (${interaction.channel?.id})`);
 
     // Determine if the command is complex and should be deferred
     // Almost all commands that make API requests should be deferred

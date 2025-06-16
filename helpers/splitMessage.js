@@ -1,3 +1,5 @@
+import logger from './logger.js';
+
 // Utility function to split a message into chunks that respect Discord's 2000 character limit.
 export default function splitMessage(text, maxLength = 2000) {
     // If the text is already within the limit, return it as an array with one element.

@@ -1,4 +1,5 @@
 import { SlashCommandBuilder } from 'discord.js';
+import logger from '../../helpers/logger.js';
 import splitMessage from '../../helpers/splitMessage.js';
 import fetchRequest from '../../helpers/fetchRequest.js';
 import { replyOrEdit } from '../../helpers/safeReply.js';
@@ -31,16 +32,16 @@ export default {
         const model = interaction.options.getString('model') ?? 'copilot';
         const apiEndpoint = baseEndpoint + (model === 'blackbox' ? 'blackbox-advanced' : 'copilot');
 
-        console.log(`🔍 [ask] Calling API endpoint: ${apiEndpoint} with model: ${model} and prompt length: ${prompt.length}`);
+        logger.info(`[ask] Calling API: ${apiEndpoint}, Model: ${model}, Prompt length: ${prompt.length}`);
         const llmOutput = await fetchRequest(apiEndpoint, prompt, model);
-        console.log('📥 [ask] Received output from API.');
+        logger.info('[ask] Received output from API.');
 
         // Split the output into message chunks if needed.
         const messages = splitMessage(llmOutput, 2000);
         // debug message content length and the length of each message
-        console.log(`🧩 [ask] Original Output length: ${llmOutput.length}`);
-        console.log(`📏 [ask] Array length after split: ${messages.length}`);
-        messages.forEach((msg, i) => console.log(`📝 [ask] Message ${i + 1} length: ${msg.length}`));
+        logger.debug(`[ask] Original Output length: ${llmOutput.length}`);
+        logger.debug(`[ask] Array length after split: ${messages.length}`);
+        messages.forEach((msg, i) => logger.debug(`[ask] Message ${i + 1} length: ${msg.length}`));
 
         // Use replyOrEdit to handle the first chunk appropriately based on interaction state
         await replyOrEdit(interaction, messages.shift());

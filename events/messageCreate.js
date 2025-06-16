@@ -1,4 +1,5 @@
 import { Events } from 'discord.js';
+import logger from '../helpers/logger.js';
 import fetchRequest from '../helpers/fetchRequest.js';
 import splitMessage from '../helpers/splitMessage.js';
 
@@ -64,16 +65,16 @@ async function buildPromptWithContext(message) {
 				
 				context += `User's reply: "${userPrompt}"`;
 				
-				console.log(`🔗 [mention] Message is a reply to: ${referencedMessage.author.username}`);
-				console.log(`🔗 [mention] Original message: "${referencedMessage.content.substring(0, 100)}..."`);
+				logger.info(`[mention] Message is a reply to: ${referencedMessage.author.username}`);
+				logger.info(`[mention] Original message: "${referencedMessage.content.substring(0, 100)}..."`);
 				if (referencedMessage.embeds && referencedMessage.embeds.length > 0) {
-					console.log(`🔗 [mention] Found ${referencedMessage.embeds.length} embed(s) in original message`);
+					logger.info(`[mention] Found ${referencedMessage.embeds.length} embed(s) in original message`);
 				}
 				
 				return context;
 			}
 		} catch (error) {
-			console.error('❌ [mention] Error fetching referenced message:', error);
+			logger.error('[mention] Error fetching referenced message:', error);
 			// Fall back to just the user prompt if we can't fetch the reference
 		}
 	}
@@ -101,9 +102,9 @@ export default {
 		if (!prompt) return;
 
 		const model = getModelFromEndpoint(baseEndpoint);
-		console.log(`🔍 [mention] User ${message.author.tag} mentioned bot in ${message.guild?.name || 'DM'}`);
-		console.log(`🔍 [mention] Prompt: "${prompt}"`);
-		console.log(`🔍 [mention] Using ${model} model`);
+		logger.info(`[mention] User ${message.author.tag} mentioned bot in ${message.guild?.name || 'DM'}`);
+		logger.debug(`[mention] Prompt: "${prompt}"`);
+		logger.info(`[mention] Using ${model} model`);
 
 		try {
 			// Send typing indicator to show the bot is processing
@@ -111,13 +112,13 @@ export default {
 
 			// Get AI response using the determined model
 			const llmOutput = await fetchRequest(baseEndpoint, prompt, model);
-			console.log('📥 [mention] Received output from API.');
+			logger.info('[mention] Received output from API.');
 
 			// Split the output into message chunks if needed
 			const messages = splitMessage(llmOutput, 2000);
-			console.log(`🧩 [mention] Original Output length: ${llmOutput.length}`);
-			console.log(`📏 [mention] Array length after split: ${messages.length}`);
-			messages.forEach((msg, i) => console.log(`📝 [mention] Message ${i + 1} length: ${msg.length}`));
+			logger.debug(`[mention] Original Output length: ${llmOutput.length}`);
+			logger.debug(`[mention] Array length after split: ${messages.length}`);
+			messages.forEach((msg, i) => logger.debug(`[mention] Message ${i + 1} length: ${msg.length}`));
 
 			// Send the first message as a reply
 			await message.reply({
@@ -134,7 +135,7 @@ export default {
 			}
 
 		} catch (error) {
-			console.error('❌ [mention] Error processing mention:', error);
+			logger.error('[mention] Error processing mention:', error);
 			await message.reply({
 				content: 'Sorry, I encountered an error while processing your request. Please try again later.',
 				allowedMentions: { parse: [] }
