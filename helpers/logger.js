@@ -24,6 +24,7 @@ const logger = winston.createLogger({
     new DailyRotateFile({
       filename: path.join(logDir, 'app-%DATE%.log'),
       datePattern: 'YYYY-MM-DD',
+      utc: true,
       zippedArchive: true,
       maxSize: '20m',
       maxFiles: '14d',
