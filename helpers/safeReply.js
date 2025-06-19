@@ -6,6 +6,8 @@
  * @param {boolean} options.deferReply - Whether to defer the reply before executing handler
  * @param {boolean} options.ephemeral - Whether the reply should be ephemeral
  */
+import logger from './logger.js';
+
 async function safeReply(interaction, handler, options = {}) {
   const { deferReply = false, ephemeral = false } = options;
   
@@ -20,21 +22,21 @@ async function safeReply(interaction, handler, options = {}) {
         );
         
         await Promise.race([deferPromise, timeoutPromise]);
-        console.log(`🔄 Successfully deferred interaction ${interaction.id}`);
+        logger.info(`Successfully deferred interaction ${interaction.id}`);
       } catch (deferError) {
         // If we can't defer, the interaction likely expired or network issue occurred
         if (deferError.code === 10062) {
-          console.log(`⏱️ Interaction ${interaction.id} expired before deferring`);
+          logger.warn(`Interaction ${interaction.id} expired before deferring`);
           return false;
         }
         
         // Handle network errors gracefully
         if (deferError.code === 'EAI_AGAIN' || deferError.message === 'Defer reply timeout') {
-          console.log(`🌐 Network issue while deferring interaction ${interaction.id}: ${deferError.message}`);
+          logger.warn(`Network issue while deferring interaction ${interaction.id}: ${deferError.message}`);
           return false;
         }
         
-        console.log(`❓ Unknown error while deferring interaction: ${deferError.message}`);
+        logger.error(`Unknown error while deferring interaction: ${deferError.message}`);
         return false;
       }
     }
@@ -46,7 +48,7 @@ async function safeReply(interaction, handler, options = {}) {
     } catch (handlerError) {
       // Handle network errors in the command execution
       if (handlerError.code === 'EAI_AGAIN') {
-        console.error(`🌐 Network error during command execution: ${handlerError.message}`);
+        logger.error(`Network error during command execution: ${handlerError.message}`);
         
         // Try to notify the user if the connection is back
         try {
@@ -54,7 +56,7 @@ async function safeReply(interaction, handler, options = {}) {
             await replyOrEdit(interaction, { content: "Network connectivity issue. Please try again later." });
           }
         } catch (notifyError) {
-          console.log(`⚠️ Couldn't notify user of network error: ${notifyError.message}`);
+          logger.warn(`Couldn't notify user of network error: ${notifyError.message}`);
         }
         
         return false;
@@ -66,19 +68,19 @@ async function safeReply(interaction, handler, options = {}) {
   } catch (error) {
     // Handle expired interactions gracefully
     if (error.code === 10062) {
-      console.log(`⏱️ Interaction ${interaction.id} expired during handling`);
+      logger.warn(`Interaction ${interaction.id} expired during handling`);
       return false;
     }
     
     // For other errors, try to report them if possible
-    console.error(`❌ Error handling interaction:`, error);
+    logger.error(`Error handling interaction: ${error.message}`, { error });
     
     try {
       const errorMessage = 'There was an error while executing this command!';
       await replyOrEdit(interaction, { content: errorMessage, ephemeral: true });
     } catch (replyError) {
       // If we can't reply, just log it - nothing more we can do
-      console.error('Failed to send error response:', replyError);
+      logger.error(`Failed to send error response: ${replyError.message}`, { error: replyError });
     }
     
     return false;
