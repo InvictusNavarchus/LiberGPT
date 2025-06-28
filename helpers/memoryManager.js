@@ -10,8 +10,10 @@ class MemoryManager {
         this.channelMemories = new Map();
         // Get memory limit from environment variable, default to 10
         this.memoryLimit = parseInt(process.env.MEMORY_LIMIT) || 10;
+        // Get cleanup interval from environment variable (in hours), default to 1 hour
+        this.cleanupIntervalHours = parseInt(process.env.MEMORY_CLEANUP_INTERVAL_HOURS) || 1;
         
-        logger.info(`[MemoryManager] Initialized with memory limit: ${this.memoryLimit}`);
+        logger.info(`[MemoryManager] Initialized with memory limit: ${this.memoryLimit}, cleanup interval: ${this.cleanupIntervalHours} hours`);
     }
 
     /**
@@ -172,9 +174,10 @@ class MemoryManager {
 // Create and export a singleton instance
 const memoryManager = new MemoryManager();
 
-// Set up periodic cleanup (every hour)
+// Set up periodic cleanup using configurable interval
+const cleanupIntervalMs = memoryManager.cleanupIntervalHours * 60 * 60 * 1000;
 setInterval(() => {
     memoryManager.cleanup();
-}, 60 * 60 * 1000);
+}, cleanupIntervalMs);
 
 export default memoryManager;

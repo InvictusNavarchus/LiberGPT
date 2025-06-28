@@ -31,6 +31,7 @@ Add the following to your `.env` file:
 ```env
 # Memory System Configuration
 MEMORY_LIMIT=10  # Number of messages to remember per channel (default: 10)
+MEMORY_CLEANUP_INTERVAL_HOURS=1  # Hours between cleanup cycles (default: 1)
 ```
 
 ### Recommended Settings
@@ -49,7 +50,7 @@ The memory system is designed to be lightweight:
 
 ## Migration Steps
 
-1. **Update Environment**: Add `MEMORY_LIMIT` to your `.env` file
+1. **Update Environment**: Add `MEMORY_LIMIT` and `MEMORY_CLEANUP_INTERVAL_HOURS` to your `.env` file
 2. **Restart Bot**: No database migration needed - memory starts fresh
 3. **Test Commands**: Try the new `/memory` commands
 4. **Monitor Performance**: Check logs for memory usage statistics
