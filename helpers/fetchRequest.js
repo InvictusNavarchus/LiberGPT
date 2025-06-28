@@ -1,32 +1,69 @@
 /**
- * Sends a GET request to the AI endpoint and returns the AI response content
- * @param {string} endpoint - The base API endpoint URL
+ * Sends a POST request to the AI endpoint and returns the AI response content
+ * @param {string} endpoint - The API endpoint URL
  * @param {string} prompt - The user's prompt to send to the AI
  * @param {string} model - The AI model to use ('copilot' or 'blackbox')
  * @returns {Promise<string>} The AI response content or error message
  */
 import logger from './logger.js';
 
+/**
+ * Generates a random ID for blackbox messages
+ * @returns {string} A random alphanumeric ID
+ */
+function generateRandomId() {
+    return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+}
+
 export default async function fetchRequest(endpoint, prompt, model) {
     try {
-        const encodedPrompt = encodeURIComponent(prompt);
-        let fullUrl;
-
+        let requestBody;
+        
         if (model === 'blackbox') {
-            // Blackbox requires additional parameters
-            const encodedSystemPrompt = encodeURIComponent("You are LiberGPT. A helpful Assistant");
-            fullUrl = `${endpoint}?text_prompt=${encodedPrompt}&system_prompt=${encodedSystemPrompt}&search_mode=false&think_mode=false`;
+            // Blackbox API format
+            requestBody = {
+                mode: "realtime",
+                stream: "false",
+                messages: [
+                    {
+                        id: generateRandomId(),
+                        role: "system",
+                        content: "You are LiberGPT. A helpful Assistant"
+                    },
+                    {
+                        id: generateRandomId(),
+                        role: "user",
+                        content: prompt
+                    }
+                ]
+            };
         } else {
-            // Copilot endpoint
-            fullUrl = `${endpoint}?text=${encodedPrompt}`;
+            // Copilot API format
+            requestBody = {
+                stream: "false",
+                messages: [
+                    {
+                        role: "system",
+                        content: "You are LiberGPT. A helpful Assistant"
+                    },
+                    {
+                        role: "user",
+                        content: prompt
+                    }
+                ]
+            };
         }
         
-        // Use CORS proxy to bypass connection issues
-        const proxiedUrl = `https://cors.fadel.web.id/${fullUrl}`;
-        
-        logger.info(`[fetchRequest] Sending GET request to: ${proxiedUrl}`);
+        logger.info(`[fetchRequest] Sending POST request to: ${endpoint}`);
+        logger.debug(`[fetchRequest] Request body: ${JSON.stringify(requestBody, null, 2)}`);
 
-        const response = await fetch(proxiedUrl, { method: "GET" });
+        const response = await fetch(endpoint, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(requestBody)
+        });
         logger.info(`[fetchRequest] HTTP Response Details: Status Code: ${response.status}, Status Text: ${response.statusText}`);
 
         if (!response.ok) {
@@ -66,6 +103,7 @@ export default async function fetchRequest(endpoint, prompt, model) {
             return content;
         } else {
             logger.warn('[fetchRequest] Unexpected response format: "content" key not found.');
+            logger.debug(`[fetchRequest] Full response: ${JSON.stringify(responseJson, null, 2)}`);
             return "Unexpected response format: 'content' key not found.";
         }
     } catch (error) {
