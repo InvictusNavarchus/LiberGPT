@@ -3,6 +3,7 @@ import logger from '../../helpers/logger.js';
 import splitMessage from '../../helpers/splitMessage.js';
 import fetchRequest from '../../helpers/fetchRequest.js';
 import { replyOrEdit } from '../../helpers/safeReply.js';
+import memoryManager from '../../helpers/memoryManager.js';
 
 const endpoints = {
     copilot: 'https://api.zpi.my.id/v1/ai/copilot',
@@ -34,10 +35,22 @@ export default {
         const prompt = interaction.options.getString('prompt');
         const model = interaction.options.getString('model') ?? 'copilot';
         const apiEndpoint = endpoints[model];
+        const channelId = interaction.channel.id;
+        const userId = interaction.user.id;
+        const username = interaction.user.username;
 
-        logger.info(`[ask] Calling API: ${apiEndpoint}, Model: ${model}, Prompt length: ${prompt.length}`);
-        const llmOutput = await fetchRequest(apiEndpoint, prompt, model);
+        // Add user message to memory
+        memoryManager.addMessage(channelId, userId, username, prompt, 'user');
+        
+        // Get memory context for this channel
+        const memoryContext = memoryManager.formatMemoryContext(channelId, 1500);
+
+        logger.info(`[ask] Calling API: ${apiEndpoint}, Model: ${model}, Prompt length: ${prompt.length}, Memory context length: ${memoryContext.length}`);
+        const llmOutput = await fetchRequest(apiEndpoint, prompt, model, memoryContext);
         logger.info('[ask] Received output from API.');
+
+        // Add bot response to memory
+        memoryManager.addMessage(channelId, interaction.client.user.id, interaction.client.user.username, llmOutput, 'assistant');
 
         // Split the output into message chunks if needed.
         const messages = splitMessage(llmOutput, 2000);

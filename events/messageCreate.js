@@ -2,6 +2,7 @@ import { Events } from 'discord.js';
 import logger from '../helpers/logger.js';
 import fetchRequest from '../helpers/fetchRequest.js';
 import splitMessage from '../helpers/splitMessage.js';
+import memoryManager from '../helpers/memoryManager.js';
 
 const endpoints = {
 	copilot: 'https://api.zpi.my.id/v1/ai/copilot',
@@ -99,6 +100,15 @@ export default {
 		// Ignore messages from bots
 		if (message.author.bot) return;
 
+		// Store all non-bot messages in memory for context
+		const channelId = message.channel.id;
+		const userId = message.author.id;
+		const username = message.author.username;
+		
+		// Add message to memory (we'll clean it later if it's a bot mention)
+		const originalContent = message.content;
+		memoryManager.addMessage(channelId, userId, username, originalContent, 'user');
+
 		// Check if the bot is mentioned in the message
 		if (!message.mentions.has(message.client.user)) return;
 
@@ -114,17 +124,23 @@ export default {
 		// Clean the prompt by removing model-specific keywords
 		prompt = prompt.replace(/\b(blackbox|bb:)\b/gi, '').trim();
 		
+		// Get memory context for this channel (exclude the current message to avoid duplication)
+		const memoryContext = memoryManager.formatMemoryContext(channelId, 1500);
+		
 		logger.info(`[mention] User ${message.author.tag} mentioned bot in ${message.guild?.name || 'DM'}`);
 		logger.debug(`[mention] Prompt: "${prompt}"`);
-		logger.info(`[mention] Using ${model} model`);
+		logger.info(`[mention] Using ${model} model with memory context length: ${memoryContext.length}`);
 
 		try {
 			// Send typing indicator to show the bot is processing
 			await message.channel.sendTyping();
 
-			// Get AI response using the determined model and endpoint
-			const llmOutput = await fetchRequest(endpoint, prompt, model);
+			// Get AI response using the determined model and endpoint with memory context
+			const llmOutput = await fetchRequest(endpoint, prompt, model, memoryContext);
 			logger.info('[mention] Received output from API.');
+
+			// Add bot response to memory
+			memoryManager.addMessage(channelId, message.client.user.id, message.client.user.username, llmOutput, 'assistant');
 
 			// Split the output into message chunks if needed
 			const messages = splitMessage(llmOutput, 2000);
