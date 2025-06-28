@@ -8,6 +8,8 @@ class MemoryManager {
     constructor() {
         // Store memory per channel: channelId -> array of messages
         this.channelMemories = new Map();
+        // Store cleanup timers per channel: channelId -> timeout
+        this.cleanupTimers = new Map();
         // Get memory limit from environment variable, default to 10
         this.memoryLimit = parseInt(process.env.MEMORY_LIMIT) || 10;
         // Get cleanup interval from environment variable (in hours), default to 1 hour
@@ -46,6 +48,9 @@ class MemoryManager {
             const removed = memory.shift();
             logger.debug(`[MemoryManager] Removed old message from ${removed.username} in channel ${channelId}`);
         }
+
+        // Reset cleanup timer for this channel
+        this.resetCleanupTimer(channelId);
 
         logger.debug(`[MemoryManager] Added message from ${username} to channel ${channelId}. Memory size: ${memory.length}`);
     }
@@ -112,6 +117,12 @@ class MemoryManager {
         const hadMemory = this.channelMemories.has(channelId);
         this.channelMemories.delete(channelId);
         
+        // Clear cleanup timer for this channel
+        if (this.cleanupTimers.has(channelId)) {
+            clearTimeout(this.cleanupTimers.get(channelId));
+            this.cleanupTimers.delete(channelId);
+        }
+        
         if (hadMemory) {
             logger.info(`[MemoryManager] Cleared memory for channel ${channelId}`);
         }
@@ -169,15 +180,30 @@ class MemoryManager {
             logger.info(`[MemoryManager] Cleaned up ${cleanedChannels} inactive channels`);
         }
     }
+
+    /**
+     * Resets the cleanup timer for a specific channel
+     * @param {string} channelId - The Discord channel ID
+     */
+    resetCleanupTimer(channelId) {
+        // Clear existing timer if it exists
+        if (this.cleanupTimers.has(channelId)) {
+            clearTimeout(this.cleanupTimers.get(channelId));
+        }
+
+        // Set new timer for this channel
+        const cleanupTimeoutMs = this.cleanupIntervalHours * 60 * 60 * 1000;
+        const timer = setTimeout(() => {
+            logger.info(`[MemoryManager] Cleaning up inactive channel ${channelId} after ${this.cleanupIntervalHours} hours of inactivity`);
+            this.clearChannelMemory(channelId);
+        }, cleanupTimeoutMs);
+
+        this.cleanupTimers.set(channelId, timer);
+        logger.debug(`[MemoryManager] Reset cleanup timer for channel ${channelId} (${this.cleanupIntervalHours} hours)`);
+    }
 }
 
 // Create and export a singleton instance
 const memoryManager = new MemoryManager();
-
-// Set up periodic cleanup using configurable interval
-const cleanupIntervalMs = memoryManager.cleanupIntervalHours * 60 * 60 * 1000;
-setInterval(() => {
-    memoryManager.cleanup();
-}, cleanupIntervalMs);
 
 export default memoryManager;
