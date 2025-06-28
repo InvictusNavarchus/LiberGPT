@@ -147,8 +147,7 @@ def test_blackbox_api(prompt: str) -> str:
             try:
                 error_response = response.json()
                 print(f"📄 Response Body: {json.dumps(error_response, indent=2)}")
--            except:
-+            except (json.JSONDecodeError, ValueError):
+            except (json.JSONDecodeError, ValueError):
                 text_response = response.text
                 print(f"📄 Response Body (text): {text_response}")
                 
