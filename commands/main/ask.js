@@ -4,7 +4,10 @@ import splitMessage from '../../helpers/splitMessage.js';
 import fetchRequest from '../../helpers/fetchRequest.js';
 import { replyOrEdit } from '../../helpers/safeReply.js';
 
-const baseEndpoint = 'https://api.zpi.my.id/v1/ai/';
+const endpoints = {
+    copilot: 'https://api.zpi.my.id/v1/ai/copilot',
+    blackbox: 'https://api.zpi.my.id/v1/ai/blackbox'
+};
 
 export default {
     data: new SlashCommandBuilder()
@@ -30,7 +33,7 @@ export default {
     async execute(interaction) {
         const prompt = interaction.options.getString('prompt');
         const model = interaction.options.getString('model') ?? 'copilot';
-        const apiEndpoint = baseEndpoint + (model === 'blackbox' ? 'blackbox-advanced' : 'copilot');
+        const apiEndpoint = endpoints[model];
 
         logger.info(`[ask] Calling API: ${apiEndpoint}, Model: ${model}, Prompt length: ${prompt.length}`);
         const llmOutput = await fetchRequest(apiEndpoint, prompt, model);

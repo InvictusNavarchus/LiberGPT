@@ -3,17 +3,24 @@ import logger from '../helpers/logger.js';
 import fetchRequest from '../helpers/fetchRequest.js';
 import splitMessage from '../helpers/splitMessage.js';
 
-const baseEndpoint = 'https://api.zpi.my.id/v1/ai/copilot';
+const endpoints = {
+	copilot: 'https://api.zpi.my.id/v1/ai/copilot',
+	blackbox: 'https://api.zpi.my.id/v1/ai/blackbox'
+};
 
 /**
- * Extracts the model type from the endpoint URL
- * @param {string} endpoint - The API endpoint URL
- * @returns {string} The model type ('copilot', 'blackbox', etc.)
+ * Determines which AI model to use based on message content or defaults to copilot
+ * @param {string} content - The message content to analyze
+ * @returns {Object} Object containing the model name and endpoint
  */
-function getModelFromEndpoint(endpoint) {
-	if (endpoint.includes('/blackbox')) return 'blackbox';
-	if (endpoint.includes('/copilot')) return 'copilot';
-	return 'copilot'; // default fallback
+function determineModel(content) {
+	// Check if user specifically requests blackbox model
+	if (content.toLowerCase().includes('blackbox') || content.toLowerCase().includes('bb:')) {
+		return { model: 'blackbox', endpoint: endpoints.blackbox };
+	}
+	
+	// Default to copilot
+	return { model: 'copilot', endpoint: endpoints.copilot };
 }
 
 /**
@@ -101,7 +108,12 @@ export default {
 		// If there's no content after removing mentions, ignore
 		if (!prompt) return;
 
-		const model = getModelFromEndpoint(baseEndpoint);
+		// Determine which AI model to use
+		const { model, endpoint } = determineModel(prompt);
+		
+		// Clean the prompt by removing model-specific keywords
+		prompt = prompt.replace(/\b(blackbox|bb:)\b/gi, '').trim();
+		
 		logger.info(`[mention] User ${message.author.tag} mentioned bot in ${message.guild?.name || 'DM'}`);
 		logger.debug(`[mention] Prompt: "${prompt}"`);
 		logger.info(`[mention] Using ${model} model`);
@@ -110,8 +122,8 @@ export default {
 			// Send typing indicator to show the bot is processing
 			await message.channel.sendTyping();
 
-			// Get AI response using the determined model
-			const llmOutput = await fetchRequest(baseEndpoint, prompt, model);
+			// Get AI response using the determined model and endpoint
+			const llmOutput = await fetchRequest(endpoint, prompt, model);
 			logger.info('[mention] Received output from API.');
 
 			// Split the output into message chunks if needed
