@@ -100,11 +100,13 @@ class MemoryManager {
                 return '';
             }
 
-            let context = '[Recent conversation history]\n';
-            let totalLength = context.length;
+            const header = '[Recent conversation history]\n';
+            const footer = '[End of conversation history]\n\n';
+            let totalLength = header.length + footer.length;
             
             // Build context from most recent messages, working backwards
-            const contextMessages = [];
+            const validMessages = [];
+            let messageCount = 0;
             
             for (let i = memory.length - 1; i >= 0; i--) {
                 const msg = memory[i];
@@ -119,18 +121,19 @@ class MemoryManager {
                     break;
                 }
                 
-                contextMessages.unshift(messageStr);
+                validMessages.push(messageStr);
                 totalLength += messageStr.length;
+                messageCount++;
             }
             
-            if (contextMessages.length === 0) {
+            if (validMessages.length === 0) {
                 return '';
             }
             
-            context += contextMessages.join('');
-            context += '[End of conversation history]\n\n';
+            // Reverse the messages to get chronological order and build final context
+            const context = header + validMessages.reverse().join('') + footer;
             
-            logger.debug(`[MemoryManager] Generated context of ${context.length} characters from ${contextMessages.length} messages for channel ${channelId}`);
+            logger.debug(`[MemoryManager] Generated context of ${context.length} characters from ${messageCount} messages for channel ${channelId}`);
             return context;
         } catch (error) {
             logger.error(`[MemoryManager] Error formatting memory context for channel ${channelId}: ${error.message}`, error);
