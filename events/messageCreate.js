@@ -107,7 +107,11 @@ export default {
 		
 		// Add message to memory (we'll clean it later if it's a bot mention)
 		const originalContent = message.content;
-		memoryManager.addMessage(channelId, userId, username, originalContent, 'user');
+		try {
+			memoryManager.addMessage(channelId, userId, username, originalContent, 'user');
+		} catch (error) {
+			logger.error(`[mention] Error adding user message to memory: ${error.message}`, error);
+		}
 
 		// Check if the bot is mentioned in the message
 		if (!message.mentions.has(message.client.user)) return;
@@ -125,7 +129,13 @@ export default {
 		prompt = prompt.replace(/\b(blackbox|bb:)\b/gi, '').trim();
 		
 		// Get memory context for this channel (exclude the current message to avoid duplication)
-		const memoryContext = memoryManager.formatMemoryContext(channelId, 1500);
+		let memoryContext = '';
+		try {
+			memoryContext = memoryManager.formatMemoryContext(channelId, 1500);
+		} catch (error) {
+			logger.error(`[mention] Error formatting memory context: ${error.message}`, error);
+			// Continue without memory context
+		}
 		
 		logger.info(`[mention] User ${message.author.tag} mentioned bot in ${message.guild?.name || 'DM'}`);
 		logger.debug(`[mention] Prompt: "${prompt}"`);
@@ -140,7 +150,12 @@ export default {
 			logger.info('[mention] Received output from API.');
 
 			// Add bot response to memory
-			memoryManager.addMessage(channelId, message.client.user.id, message.client.user.username, llmOutput, 'assistant');
+			try {
+				memoryManager.addMessage(channelId, message.client.user.id, message.client.user.username, llmOutput, 'assistant');
+			} catch (error) {
+				logger.error(`[mention] Error adding bot response to memory: ${error.message}`, error);
+				// Continue without storing the response
+			}
 
 			// Split the output into message chunks if needed
 			const messages = splitMessage(llmOutput, 2000);

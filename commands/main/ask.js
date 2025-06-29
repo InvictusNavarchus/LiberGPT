@@ -40,17 +40,32 @@ export default {
         const username = interaction.user.username;
 
         // Add user message to memory
-        memoryManager.addMessage(channelId, userId, username, prompt, 'user');
+        try {
+            memoryManager.addMessage(channelId, userId, username, prompt, 'user');
+        } catch (error) {
+            logger.error(`[ask] Error adding user message to memory: ${error.message}`, error);
+        }
         
         // Get memory context for this channel
-        const memoryContext = memoryManager.formatMemoryContext(channelId, 1500);
+        let memoryContext = '';
+        try {
+            memoryContext = memoryManager.formatMemoryContext(channelId, 1500);
+        } catch (error) {
+            logger.error(`[ask] Error formatting memory context: ${error.message}`, error);
+            // Continue without memory context
+        }
 
         logger.info(`[ask] Calling API: ${apiEndpoint}, Model: ${model}, Prompt length: ${prompt.length}, Memory context length: ${memoryContext.length}`);
         const llmOutput = await fetchRequest(apiEndpoint, prompt, model, memoryContext);
         logger.info('[ask] Received output from API.');
 
         // Add bot response to memory
-        memoryManager.addMessage(channelId, interaction.client.user.id, interaction.client.user.username, llmOutput, 'assistant');
+        try {
+            memoryManager.addMessage(channelId, interaction.client.user.id, interaction.client.user.username, llmOutput, 'assistant');
+        } catch (error) {
+            logger.error(`[ask] Error adding bot response to memory: ${error.message}`, error);
+            // Continue without storing the response
+        }
 
         // Split the output into message chunks if needed.
         const messages = splitMessage(llmOutput, 2000);

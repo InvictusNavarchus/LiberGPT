@@ -10,10 +10,14 @@ class MemoryManager {
         this.channelMemories = new Map();
         // Store cleanup timers per channel: channelId -> timeout
         this.cleanupTimers = new Map();
-        // Get memory limit from environment variable, default to 10
-        this.memoryLimit = parseInt(process.env.MEMORY_LIMIT) || 10;
-        // Get cleanup interval from environment variable (in hours), default to 1 hour
-        this.cleanupIntervalHours = parseInt(process.env.MEMORY_CLEANUP_INTERVAL_HOURS) || 1;
+        
+        // Get memory limit from environment variable with validation
+        const memoryLimitEnv = parseInt(process.env.MEMORY_LIMIT);
+        this.memoryLimit = (memoryLimitEnv && memoryLimitEnv > 0 && memoryLimitEnv <= 100) ? memoryLimitEnv : 1;
+        
+        // Get cleanup interval from environment variable with validation (in hours)
+        const cleanupIntervalEnv = parseFloat(process.env.MEMORY_CLEANUP_INTERVAL_HOURS);
+        this.cleanupIntervalHours = (cleanupIntervalEnv && cleanupIntervalEnv > 0 && cleanupIntervalEnv <= 168) ? cleanupIntervalEnv : 1;
         
         logger.info(`[MemoryManager] Initialized with memory limit: ${this.memoryLimit}, cleanup interval: ${this.cleanupIntervalHours} hours`);
     }
@@ -28,31 +32,41 @@ class MemoryManager {
      * @param {Date} timestamp - When the message was sent
      */
     addMessage(channelId, userId, username, content, role = 'user', timestamp = new Date()) {
-        if (!this.channelMemories.has(channelId)) {
-            this.channelMemories.set(channelId, []);
+        try {
+            // Validate inputs
+            if (!channelId || !userId || !username || content === undefined || content === null) {
+                logger.warn(`[MemoryManager] Invalid parameters for addMessage: channelId=${channelId}, userId=${userId}, username=${username}, content=${typeof content}`);
+                return;
+            }
+
+            if (!this.channelMemories.has(channelId)) {
+                this.channelMemories.set(channelId, []);
+            }
+
+            const memory = this.channelMemories.get(channelId);
+            const messageEntry = {
+                userId,
+                username,
+                content: String(content).substring(0, 1000), // Limit content length to prevent memory bloat
+                role,
+                timestamp: timestamp.toISOString()
+            };
+
+            memory.push(messageEntry);
+
+            // Maintain memory limit by removing oldest messages
+            while (memory.length > this.memoryLimit) {
+                const removed = memory.shift();
+                logger.debug(`[MemoryManager] Removed old message from ${removed.username} in channel ${channelId}`);
+            }
+
+            // Reset cleanup timer for this channel
+            this.resetCleanupTimer(channelId);
+
+            logger.debug(`[MemoryManager] Added message from ${username} to channel ${channelId}. Memory size: ${memory.length}`);
+        } catch (error) {
+            logger.error(`[MemoryManager] Error adding message to channel ${channelId}: ${error.message}`, error);
         }
-
-        const memory = this.channelMemories.get(channelId);
-        const messageEntry = {
-            userId,
-            username,
-            content: content.substring(0, 1000), // Limit content length to prevent memory bloat
-            role,
-            timestamp: timestamp.toISOString()
-        };
-
-        memory.push(messageEntry);
-
-        // Maintain memory limit by removing oldest messages
-        while (memory.length > this.memoryLimit) {
-            const removed = memory.shift();
-            logger.debug(`[MemoryManager] Removed old message from ${removed.username} in channel ${channelId}`);
-        }
-
-        // Reset cleanup timer for this channel
-        this.resetCleanupTimer(channelId);
-
-        logger.debug(`[MemoryManager] Added message from ${username} to channel ${channelId}. Memory size: ${memory.length}`);
     }
 
     /**
@@ -73,40 +87,55 @@ class MemoryManager {
      * @returns {string} Formatted context string
      */
     formatMemoryContext(channelId, maxContextLength = 2000) {
-        const memory = this.getChannelMemory(channelId);
-        
-        if (memory.length === 0) {
-            return '';
-        }
+        try {
+            // Validate inputs
+            if (!channelId) {
+                logger.warn(`[MemoryManager] Invalid channelId for formatMemoryContext: ${channelId}`);
+                return '';
+            }
 
-        let context = '[Recent conversation history]\n';
-        let totalLength = context.length;
-        
-        // Build context from most recent messages, working backwards
-        const contextMessages = [];
-        
-        for (let i = memory.length - 1; i >= 0; i--) {
-            const msg = memory[i];
-            const messageStr = `${msg.username} (${msg.role}): ${msg.content}\n`;
+            const memory = this.getChannelMemory(channelId);
             
-            // Check if adding this message would exceed the limit
-            if (totalLength + messageStr.length > maxContextLength) {
-                break;
+            if (memory.length === 0) {
+                return '';
+            }
+
+            let context = '[Recent conversation history]\n';
+            let totalLength = context.length;
+            
+            // Build context from most recent messages, working backwards
+            const contextMessages = [];
+            
+            for (let i = memory.length - 1; i >= 0; i--) {
+                const msg = memory[i];
+                if (!msg || !msg.username || !msg.content) {
+                    continue; // Skip malformed messages
+                }
+                
+                const messageStr = `${msg.username} (${msg.role || 'user'}): ${msg.content}\n`;
+                
+                // Check if adding this message would exceed the limit
+                if (totalLength + messageStr.length > maxContextLength) {
+                    break;
+                }
+                
+                contextMessages.unshift(messageStr);
+                totalLength += messageStr.length;
             }
             
-            contextMessages.unshift(messageStr);
-            totalLength += messageStr.length;
+            if (contextMessages.length === 0) {
+                return '';
+            }
+            
+            context += contextMessages.join('');
+            context += '[End of conversation history]\n\n';
+            
+            logger.debug(`[MemoryManager] Generated context of ${context.length} characters from ${contextMessages.length} messages for channel ${channelId}`);
+            return context;
+        } catch (error) {
+            logger.error(`[MemoryManager] Error formatting memory context for channel ${channelId}: ${error.message}`, error);
+            return ''; // Return empty string on error to allow AI request to continue
         }
-        
-        if (contextMessages.length === 0) {
-            return '';
-        }
-        
-        context += contextMessages.join('');
-        context += '[End of conversation history]\n\n';
-        
-        logger.debug(`[MemoryManager] Generated context of ${context.length} characters from ${contextMessages.length} messages for channel ${channelId}`);
-        return context;
     }
 
     /**

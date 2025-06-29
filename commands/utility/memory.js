@@ -90,9 +90,19 @@ export default {
                     
                     response += '```';
                     
-                    // If response is too long, truncate it
+                    // If response is too long, truncate it properly
                     if (response.length > 1900) {
-                        response = response.substring(0, 1897) + '...```';
+                        // Find the last complete line that fits
+                        const maxLength = 1890; // Leave room for closing ```
+                        let truncatedResponse = response.substring(0, maxLength);
+                        
+                        // Find the last newline to avoid cutting mid-line
+                        const lastNewline = truncatedResponse.lastIndexOf('\n');
+                        if (lastNewline > 0) {
+                            truncatedResponse = truncatedResponse.substring(0, lastNewline);
+                        }
+                        
+                        response = truncatedResponse + '\n...\n```';
                     }
                     
                     await interaction.reply({
