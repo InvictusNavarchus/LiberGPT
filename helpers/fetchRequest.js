@@ -3,6 +3,7 @@
  * @param {string} endpoint - The API endpoint URL
  * @param {string} prompt - The user's prompt to send to the AI
  * @param {string} model - The AI model to use ('copilot' or 'blackbox')
+ * @param {string} memoryContext - Optional memory context from previous conversations
  * @returns {Promise<string>} The AI response content or error message
  */
 import logger from './logger.js';
@@ -15,9 +16,12 @@ function generateRandomId() {
     return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
 }
 
-export default async function fetchRequest(endpoint, prompt, model) {
+export default async function fetchRequest(endpoint, prompt, model, memoryContext = '') {
     try {
         let requestBody;
+        
+        // Combine memory context with current prompt
+        const fullPrompt = memoryContext ? `${memoryContext}Current request: ${prompt}` : prompt;
         
         if (model === 'blackbox') {
             // Blackbox API format
@@ -28,12 +32,12 @@ export default async function fetchRequest(endpoint, prompt, model) {
                     {
                         id: generateRandomId(),
                         role: "system",
-                        content: "You are LiberGPT. A helpful Assistant"
+                        content: "You are LiberGPT. A helpful Assistant. Use the conversation history provided to give contextual responses."
                     },
                     {
                         id: generateRandomId(),
                         role: "user",
-                        content: prompt
+                        content: fullPrompt
                     }
                 ]
             };
@@ -44,11 +48,11 @@ export default async function fetchRequest(endpoint, prompt, model) {
                 messages: [
                     {
                         role: "system",
-                        content: "You are LiberGPT. A helpful Assistant"
+                        content: "You are LiberGPT. A helpful Assistant. Use the conversation history provided to give contextual responses."
                     },
                     {
                         role: "user",
-                        content: prompt
+                        content: fullPrompt
                     }
                 ]
             };

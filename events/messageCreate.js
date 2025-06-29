@@ -2,6 +2,7 @@ import { Events } from 'discord.js';
 import logger from '../helpers/logger.js';
 import fetchRequest from '../helpers/fetchRequest.js';
 import splitMessage from '../helpers/splitMessage.js';
+import memoryManager from '../helpers/memoryManager.js';
 
 const endpoints = {
 	copilot: 'https://api.zpi.my.id/v1/ai/copilot',
@@ -102,6 +103,19 @@ export default {
 		// Check if the bot is mentioned in the message
 		if (!message.mentions.has(message.client.user)) return;
 
+		// Store user message in memory only when bot is mentioned
+		const channelId = message.channel.id;
+		const userId = message.author.id;
+		const username = message.author.username;
+		const originalContent = message.content;
+		const userMessageTimestamp = message.createdAt; // Use Discord message timestamp
+		
+		try {
+			memoryManager.addMessage(channelId, userId, username, originalContent, 'user', userMessageTimestamp);
+		} catch (error) {
+			logger.error(`[mention] Error adding user message to memory: ${error.message}`, error);
+		}
+
 		// Build the prompt with reply context if available
 		let prompt = await buildPromptWithContext(message);
 
@@ -114,17 +128,40 @@ export default {
 		// Clean the prompt by removing model-specific keywords
 		prompt = prompt.replace(/\b(blackbox|bb:)\b/gi, '').trim();
 		
+		// Get memory context for this channel (exclude the current message to avoid duplication)
+		let memoryContext = '';
+		try {
+			// Get max context length from environment variable with validation
+			const maxContextLengthEnv = parseInt(process.env.MAX_TOTAL_INPUT_LENGTH);
+			const maxContextLength = (maxContextLengthEnv && maxContextLengthEnv > 0 && maxContextLengthEnv <= 10000) ? maxContextLengthEnv : 4000;
+			
+			memoryContext = memoryManager.formatMemoryContext(channelId, maxContextLength);
+		} catch (error) {
+			logger.error(`[mention] Error formatting memory context: ${error.message}`, error);
+			// Continue without memory context
+		}
+		
 		logger.info(`[mention] User ${message.author.tag} mentioned bot in ${message.guild?.name || 'DM'}`);
 		logger.debug(`[mention] Prompt: "${prompt}"`);
-		logger.info(`[mention] Using ${model} model`);
+		logger.info(`[mention] Using ${model} model with memory context length: ${memoryContext.length}`);
 
 		try {
 			// Send typing indicator to show the bot is processing
 			await message.channel.sendTyping();
 
-			// Get AI response using the determined model and endpoint
-			const llmOutput = await fetchRequest(endpoint, prompt, model);
+			// Get AI response using the determined model and endpoint with memory context
+			const llmOutput = await fetchRequest(endpoint, prompt, model, memoryContext);
 			logger.info('[mention] Received output from API.');
+
+			// Add bot response to memory with timestamp based on user message time
+			try {
+				// Bot response should be timestamped just after the user message for chronological order
+				const botResponseTimestamp = new Date(userMessageTimestamp.getTime() + 1); // +1ms after user message
+				memoryManager.addMessage(channelId, message.client.user.id, message.client.user.username, llmOutput, 'assistant', botResponseTimestamp);
+			} catch (error) {
+				logger.error(`[mention] Error adding bot response to memory: ${error.message}`, error);
+				// Continue without storing the response
+			}
 
 			// Split the output into message chunks if needed
 			const messages = splitMessage(llmOutput, 2000);
