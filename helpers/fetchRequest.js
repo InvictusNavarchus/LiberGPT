@@ -7,6 +7,16 @@
  * @returns {Promise<string>} The AI response content or error message
  */
 import logger from './logger.js';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Cache for system prompt
+let systemPromptCache = null;
+let systemPromptLastModified = null;
 
 /**
  * Generates a random ID for blackbox messages
@@ -16,12 +26,84 @@ function generateRandomId() {
     return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
 }
 
+/**
+ * Reads and returns the system prompt from the markdown config file with caching
+ * @returns {string} The system prompt content
+ */
+function getSystemPrompt() {
+    try {
+        const configPath = path.join(__dirname, '..', 'config', 'system-prompt.md');
+        
+        // Check if file exists and get modification time
+        const stats = fs.statSync(configPath);
+        const lastModified = stats.mtime.getTime();
+        
+        // Return cached version if file hasn't been modified
+        if (systemPromptCache && systemPromptLastModified === lastModified) {
+            return systemPromptCache;
+        }
+        
+        // Read and parse the file
+        const content = fs.readFileSync(configPath, 'utf8');
+        
+        // Extract content after the first heading, skipping any blank lines
+        const lines = content.split('\n');
+        const startIndex = lines.findIndex(line => line.startsWith('# '));
+        
+        let systemPrompt;
+        if (startIndex !== -1) {
+            // Find the first non-empty line after the heading
+            let contentStartIndex = startIndex + 1;
+            while (contentStartIndex < lines.length && lines[contentStartIndex].trim() === '') {
+                contentStartIndex++;
+            }
+            
+            if (contentStartIndex < lines.length) {
+                systemPrompt = lines.slice(contentStartIndex).join('\n').trim();
+            } else {
+                // Fallback to default if no content found after heading
+                systemPrompt = "You are LiberGPT. A helpful Assistant. Use the conversation history provided to give contextual responses.";
+            }
+        } else {
+            // Fallback to default if no heading found
+            systemPrompt = "You are LiberGPT. A helpful Assistant. Use the conversation history provided to give contextual responses.";
+        }
+        
+        // Cache the result
+        systemPromptCache = systemPrompt;
+        systemPromptLastModified = lastModified;
+        
+        logger.info(`[fetchRequest] System prompt loaded and cached from config file`);
+        return systemPrompt;
+        
+    } catch (error) {
+        logger.warn(`[fetchRequest] Failed to read system prompt config: ${error.message}`);
+        
+        // Return cached version if available, otherwise fallback to default
+        if (systemPromptCache) {
+            logger.info(`[fetchRequest] Using cached system prompt due to file read error`);
+            return systemPromptCache;
+        }
+        
+        const fallbackPrompt = "You are LiberGPT. A helpful Assistant. Use the conversation history provided to give contextual responses.";
+        
+        // Cache the fallback to avoid repeated file access attempts
+        systemPromptCache = fallbackPrompt;
+        systemPromptLastModified = Date.now();
+        
+        return fallbackPrompt;
+    }
+}
+
 export default async function fetchRequest(endpoint, prompt, model, memoryContext = '') {
     try {
         let requestBody;
         
         // Combine memory context with current prompt
         const fullPrompt = memoryContext ? `${memoryContext}Current request: ${prompt}` : prompt;
+        
+        // Get system prompt from config
+        const systemPrompt = getSystemPrompt();
         
         if (model === 'blackbox') {
             // Blackbox API format
@@ -32,7 +114,7 @@ export default async function fetchRequest(endpoint, prompt, model, memoryContex
                     {
                         id: generateRandomId(),
                         role: "system",
-                        content: "You are LiberGPT. A helpful Assistant. Use the conversation history provided to give contextual responses."
+                        content: systemPrompt
                     },
                     {
                         id: generateRandomId(),
@@ -48,7 +130,7 @@ export default async function fetchRequest(endpoint, prompt, model, memoryContex
                 messages: [
                     {
                         role: "system",
-                        content: "You are LiberGPT. A helpful Assistant. Use the conversation history provided to give contextual responses."
+                        content: systemPrompt
                     },
                     {
                         role: "user",
