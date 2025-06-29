@@ -50,7 +50,11 @@ export default {
         // Get memory context for this channel
         let memoryContext = '';
         try {
-            memoryContext = memoryManager.formatMemoryContext(channelId, 1500);
+            // Get max context length from environment variable with validation
+            const maxContextLengthEnv = parseInt(process.env.MAX_TOTAL_INPUT_LENGTH);
+            const maxContextLength = (maxContextLengthEnv && maxContextLengthEnv > 0 && maxContextLengthEnv <= 10000) ? maxContextLengthEnv : 4000;
+            
+            memoryContext = memoryManager.formatMemoryContext(channelId, maxContextLength);
         } catch (error) {
             logger.error(`[ask] Error formatting memory context: ${error.message}`, error);
             // Continue without memory context
