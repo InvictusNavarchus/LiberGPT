@@ -23,6 +23,15 @@ class MemoryManager {
     }
 
     /**
+     * Converts hours to milliseconds
+     * @param {number} hours - Number of hours to convert
+     * @returns {number} Equivalent milliseconds
+     */
+    hoursToMs(hours) {
+        return hours * 60 * 60 * 1000;
+    }
+
+    /**
      * Adds a message to the channel's memory
      * @param {string} channelId - The Discord channel ID
      * @param {string} userId - The Discord user ID
@@ -188,7 +197,7 @@ class MemoryManager {
      */
     cleanup() {
         const now = new Date();
-        const cutoffTime = new Date(now.getTime() - this.cleanupIntervalHours * 60 * 60 * 1000);
+        const cutoffTime = new Date(now.getTime() - this.hoursToMs(this.cleanupIntervalHours));
         let cleanedChannels = 0;
 
         for (const [channelId, memory] of this.channelMemories.entries()) {
@@ -224,7 +233,7 @@ class MemoryManager {
         }
 
         // Set new timer for this channel
-        const cleanupTimeoutMs = this.cleanupIntervalHours * 60 * 60 * 1000;
+        const cleanupTimeoutMs = this.hoursToMs(this.cleanupIntervalHours);
         const timer = setTimeout(() => {
             try {
                 // Check if the timer is still registered and channel still has memory
