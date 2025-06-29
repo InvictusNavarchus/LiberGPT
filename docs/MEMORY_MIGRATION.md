@@ -30,15 +30,15 @@ Add the following to your `.env` file:
 
 ```env
 # Memory System Configuration
-MEMORY_LIMIT=10  # Number of messages to remember per channel (default: 10)
+MEMORY_LIMIT=20  # Number of messages to remember per channel (default: 20)
 MEMORY_CLEANUP_INTERVAL_HOURS=1  # Hours between cleanup cycles (default: 1)
 ```
 
 ### Recommended Settings
 
-- **Small servers** (< 100 users): `MEMORY_LIMIT=15`
-- **Medium servers** (100-1000 users): `MEMORY_LIMIT=10`
-- **Large servers** (> 1000 users): `MEMORY_LIMIT=5`
+- **Small servers** (< 100 users): `MEMORY_LIMIT=25`
+- **Medium servers** (100-1000 users): `MEMORY_LIMIT=20`
+- **Large servers** (> 1000 users): `MEMORY_LIMIT=15`
 
 ## Memory Usage
 
@@ -59,8 +59,8 @@ The memory system is designed to be lightweight:
 
 ### Memory Impact
 - Each message: ~200-300 bytes in memory
-- Per channel with 10 messages: ~2-3 KB
-- 100 active channels: ~200-300 KB total
+- Per channel with 20 messages: ~4-6 KB
+- 100 active channels: ~400-600 KB total
 
 ### Performance Benefits
 - Better AI responses due to context

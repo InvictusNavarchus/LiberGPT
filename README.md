@@ -34,7 +34,7 @@ The bot features a robust memory system that remembers the last N messages from 
 3. Copy `.env.example` to `.env` and configure:
    ```
    TOKEN=your_discord_bot_token_here
-   MEMORY_LIMIT=10
+   MEMORY_LIMIT=20
    MEMORY_CLEANUP_INTERVAL_HOURS=1
    ```
 4. Deploy commands: `pnpm run deploy:local` or `pnpm run deploy:global`
@@ -43,7 +43,7 @@ The bot features a robust memory system that remembers the last N messages from 
 ## Environment Variables
 
 - `TOKEN` - Discord bot token (required)
-- `MEMORY_LIMIT` - Number of messages to remember per channel (default: 10)
+- `MEMORY_LIMIT` - Number of messages to remember per channel (default: 20)
 - `MEMORY_CLEANUP_INTERVAL_HOURS` - Hours between memory cleanup cycles (default: 1)
 
 ## Commands
