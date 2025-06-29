@@ -40,8 +40,14 @@ The bot features a robust memory system that remembers the last N messages from 
    MEMORY_CLEANUP_INTERVAL_HOURS=1
    MAX_TOTAL_INPUT_LENGTH=4000
    ```
-4. Deploy commands: `pnpm run deploy:local` or `pnpm run deploy:global`
-5. Start the bot: `pnpm start`
+4. (Optional) Customize the AI system prompt by editing `config/system-prompt.md`
+5. Deploy commands: `pnpm run deploy:local` or `pnpm run deploy:global`
+6. Start the bot: `pnpm start`
+
+## Configuration
+
+### System Prompt
+The AI system prompt can be customized by editing the `config/system-prompt.md` file. This file contains the instructions that define the AI's personality and behavior. If the file is missing or unreadable, the bot will fall back to a default prompt.
 
 ## Environment Variables
 
@@ -96,6 +102,8 @@ Reply to any message and mention the bot to get responses that consider the orig
 │       ├── ping.js
 │       ├── server.js
 │       └── user.js
+├── config/
+│   └── system-prompt.md
 ├── events/
 │   ├── interactionCreate.js
 │   ├── messageCreate.js

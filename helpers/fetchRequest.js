@@ -7,6 +7,12 @@
  * @returns {Promise<string>} The AI response content or error message
  */
 import logger from './logger.js';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 /**
  * Generates a random ID for blackbox messages
@@ -16,12 +22,40 @@ function generateRandomId() {
     return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
 }
 
+/**
+ * Reads and returns the system prompt from the markdown config file
+ * @returns {string} The system prompt content
+ */
+function getSystemPrompt() {
+    try {
+        const configPath = path.join(__dirname, '..', 'config', 'system-prompt.md');
+        const content = fs.readFileSync(configPath, 'utf8');
+        
+        // Extract content after the first heading
+        const lines = content.split('\n');
+        const startIndex = lines.findIndex(line => line.startsWith('# '));
+        
+        if (startIndex !== -1 && startIndex + 2 < lines.length) {
+            return lines.slice(startIndex + 2).join('\n').trim();
+        }
+        
+        // Fallback to default if parsing fails
+        return "You are LiberGPT. A helpful Assistant. Use the conversation history provided to give contextual responses.";
+    } catch (error) {
+        logger.warn(`[fetchRequest] Failed to read system prompt config: ${error.message}`);
+        return "You are LiberGPT. A helpful Assistant. Use the conversation history provided to give contextual responses.";
+    }
+}
+
 export default async function fetchRequest(endpoint, prompt, model, memoryContext = '') {
     try {
         let requestBody;
         
         // Combine memory context with current prompt
         const fullPrompt = memoryContext ? `${memoryContext}Current request: ${prompt}` : prompt;
+        
+        // Get system prompt from config
+        const systemPrompt = getSystemPrompt();
         
         if (model === 'blackbox') {
             // Blackbox API format
@@ -32,7 +66,7 @@ export default async function fetchRequest(endpoint, prompt, model, memoryContex
                     {
                         id: generateRandomId(),
                         role: "system",
-                        content: "You are LiberGPT. A helpful Assistant. Use the conversation history provided to give contextual responses."
+                        content: systemPrompt
                     },
                     {
                         id: generateRandomId(),
@@ -48,7 +82,7 @@ export default async function fetchRequest(endpoint, prompt, model, memoryContex
                 messages: [
                     {
                         role: "system",
-                        content: "You are LiberGPT. A helpful Assistant. Use the conversation history provided to give contextual responses."
+                        content: systemPrompt
                     },
                     {
                         role: "user",
