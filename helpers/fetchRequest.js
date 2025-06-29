@@ -46,15 +46,26 @@ function getSystemPrompt() {
         // Read and parse the file
         const content = fs.readFileSync(configPath, 'utf8');
         
-        // Extract content after the first heading
+        // Extract content after the first heading, skipping any blank lines
         const lines = content.split('\n');
         const startIndex = lines.findIndex(line => line.startsWith('# '));
         
         let systemPrompt;
-        if (startIndex !== -1 && startIndex + 2 < lines.length) {
-            systemPrompt = lines.slice(startIndex + 2).join('\n').trim();
+        if (startIndex !== -1) {
+            // Find the first non-empty line after the heading
+            let contentStartIndex = startIndex + 1;
+            while (contentStartIndex < lines.length && lines[contentStartIndex].trim() === '') {
+                contentStartIndex++;
+            }
+            
+            if (contentStartIndex < lines.length) {
+                systemPrompt = lines.slice(contentStartIndex).join('\n').trim();
+            } else {
+                // Fallback to default if no content found after heading
+                systemPrompt = "You are LiberGPT. A helpful Assistant. Use the conversation history provided to give contextual responses.";
+            }
         } else {
-            // Fallback to default if parsing fails
+            // Fallback to default if no heading found
             systemPrompt = "You are LiberGPT. A helpful Assistant. Use the conversation history provided to give contextual responses.";
         }
         
