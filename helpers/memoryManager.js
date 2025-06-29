@@ -13,7 +13,7 @@ class MemoryManager {
         
         // Get memory limit from environment variable with validation
         const memoryLimitEnv = parseInt(process.env.MEMORY_LIMIT);
-        this.memoryLimit = (memoryLimitEnv && memoryLimitEnv > 0 && memoryLimitEnv <= 100) ? memoryLimitEnv : 1;
+        this.memoryLimit = (memoryLimitEnv && memoryLimitEnv > 0 && memoryLimitEnv <= 100) ? memoryLimitEnv : 10;
         
         // Get cleanup interval from environment variable with validation (in hours)
         const cleanupIntervalEnv = parseFloat(process.env.MEMORY_CLEANUP_INTERVAL_HOURS);
