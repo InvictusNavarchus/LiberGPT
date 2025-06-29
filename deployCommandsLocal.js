@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 const __dirname = import.meta.dirname;
 
-const { BOT_ID, TOKEN } = process.env;
+const { APPLICATION_ID, TOKEN } = process.env;
 
 // Read and parse the guildList.json file
 const guildList = JSON.parse(fs.readFileSync('guildList.json', 'utf-8'));
@@ -42,7 +42,7 @@ async function deployCommands(GUILD_NAME, GUILD_ID) {
 
         // The put method is used to fully refresh all commands in the guild with the current set
         const data = await rest.put(
-            Routes.applicationGuildCommands(BOT_ID, GUILD_ID),
+            Routes.applicationGuildCommands(APPLICATION_ID, GUILD_ID),
             { body: commands },
         );
 
