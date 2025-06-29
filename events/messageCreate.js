@@ -108,9 +108,10 @@ export default {
 		const userId = message.author.id;
 		const username = message.author.username;
 		const originalContent = message.content;
+		const userMessageTimestamp = message.createdAt; // Use Discord message timestamp
 		
 		try {
-			memoryManager.addMessage(channelId, userId, username, originalContent, 'user');
+			memoryManager.addMessage(channelId, userId, username, originalContent, 'user', userMessageTimestamp);
 		} catch (error) {
 			logger.error(`[mention] Error adding user message to memory: ${error.message}`, error);
 		}
@@ -148,9 +149,11 @@ export default {
 			const llmOutput = await fetchRequest(endpoint, prompt, model, memoryContext);
 			logger.info('[mention] Received output from API.');
 
-			// Add bot response to memory
+			// Add bot response to memory with timestamp based on user message time
 			try {
-				memoryManager.addMessage(channelId, message.client.user.id, message.client.user.username, llmOutput, 'assistant');
+				// Bot response should be timestamped just after the user message for chronological order
+				const botResponseTimestamp = new Date(userMessageTimestamp.getTime() + 1000); // +1 second after user message
+				memoryManager.addMessage(channelId, message.client.user.id, message.client.user.username, llmOutput, 'assistant', botResponseTimestamp);
 			} catch (error) {
 				logger.error(`[mention] Error adding bot response to memory: ${error.message}`, error);
 				// Continue without storing the response

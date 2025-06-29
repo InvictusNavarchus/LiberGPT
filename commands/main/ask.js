@@ -38,10 +38,11 @@ export default {
         const channelId = interaction.channel.id;
         const userId = interaction.user.id;
         const username = interaction.user.username;
+        const userMessageTimestamp = new Date(); // Store timestamp when user initiated the request
 
         // Add user message to memory
         try {
-            memoryManager.addMessage(channelId, userId, username, prompt, 'user');
+            memoryManager.addMessage(channelId, userId, username, prompt, 'user', userMessageTimestamp);
         } catch (error) {
             logger.error(`[ask] Error adding user message to memory: ${error.message}`, error);
         }
@@ -59,9 +60,11 @@ export default {
         const llmOutput = await fetchRequest(apiEndpoint, prompt, model, memoryContext);
         logger.info('[ask] Received output from API.');
 
-        // Add bot response to memory
+        // Add bot response to memory with timestamp based on user message time
         try {
-            memoryManager.addMessage(channelId, interaction.client.user.id, interaction.client.user.username, llmOutput, 'assistant');
+            // Bot response should be timestamped just after the user message for chronological order
+            const botResponseTimestamp = new Date(userMessageTimestamp.getTime() + 1000); // +1 second after user message
+            memoryManager.addMessage(channelId, interaction.client.user.id, interaction.client.user.username, llmOutput, 'assistant', botResponseTimestamp);
         } catch (error) {
             logger.error(`[ask] Error adding bot response to memory: ${error.message}`, error);
             // Continue without storing the response
