@@ -184,11 +184,11 @@ class MemoryManager {
 
     /**
      * Cleanup old memories to prevent memory leaks
-     * Removes channels that haven't been active for more than 24 hours
+     * Removes channels that haven't been active for more than the configured cleanup interval
      */
     cleanup() {
         const now = new Date();
-        const cutoffTime = new Date(now.getTime() - 24 * 60 * 60 * 1000); // 24 hours ago
+        const cutoffTime = new Date(now.getTime() - this.cleanupIntervalHours * 60 * 60 * 1000);
         let cleanedChannels = 0;
 
         for (const [channelId, memory] of this.channelMemories.entries()) {
