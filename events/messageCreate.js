@@ -100,21 +100,20 @@ export default {
 		// Ignore messages from bots
 		if (message.author.bot) return;
 
-		// Store all non-bot messages in memory for context
+		// Check if the bot is mentioned in the message
+		if (!message.mentions.has(message.client.user)) return;
+
+		// Store user message in memory only when bot is mentioned
 		const channelId = message.channel.id;
 		const userId = message.author.id;
 		const username = message.author.username;
-		
-		// Add message to memory (we'll clean it later if it's a bot mention)
 		const originalContent = message.content;
+		
 		try {
 			memoryManager.addMessage(channelId, userId, username, originalContent, 'user');
 		} catch (error) {
 			logger.error(`[mention] Error adding user message to memory: ${error.message}`, error);
 		}
-
-		// Check if the bot is mentioned in the message
-		if (!message.mentions.has(message.client.user)) return;
 
 		// Build the prompt with reply context if available
 		let prompt = await buildPromptWithContext(message);
