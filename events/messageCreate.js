@@ -152,7 +152,7 @@ export default {
 			// Add bot response to memory with timestamp based on user message time
 			try {
 				// Bot response should be timestamped just after the user message for chronological order
-				const botResponseTimestamp = new Date(userMessageTimestamp.getTime() + 1000); // +1 second after user message
+				const botResponseTimestamp = new Date(userMessageTimestamp.getTime() + 1); // +1ms after user message
 				memoryManager.addMessage(channelId, message.client.user.id, message.client.user.username, llmOutput, 'assistant', botResponseTimestamp);
 			} catch (error) {
 				logger.error(`[mention] Error adding bot response to memory: ${error.message}`, error);
