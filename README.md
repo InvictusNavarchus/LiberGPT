@@ -34,8 +34,11 @@ The bot features a robust memory system that remembers the last N messages from 
 3. Copy `.env.example` to `.env` and configure:
    ```
    TOKEN=your_discord_bot_token_here
+   APPLICATION_ID=your_bot_id_here
+   GUILD_ID=your_guild_id_here
    MEMORY_LIMIT=20
    MEMORY_CLEANUP_INTERVAL_HOURS=1
+   MAX_TOTAL_INPUT_LENGTH=4000
    ```
 4. Deploy commands: `pnpm run deploy:local` or `pnpm run deploy:global`
 5. Start the bot: `pnpm start`
@@ -43,8 +46,11 @@ The bot features a robust memory system that remembers the last N messages from 
 ## Environment Variables
 
 - `TOKEN` - Discord bot token (required)
-- `MEMORY_LIMIT` - Number of messages to remember per channel (default: 20)
-- `MEMORY_CLEANUP_INTERVAL_HOURS` - Hours between memory cleanup cycles (default: 1)
+- `APPLICATION_ID` - Discord application ID/Client ID (required)
+- `GUILD_ID` - Guild ID for local command deployment (optional, only needed for testing)
+- `MEMORY_LIMIT` - Number of messages to remember per channel (default: 20, range: 1-100)
+- `MEMORY_CLEANUP_INTERVAL_HOURS` - Hours between memory cleanup cycles (default: 1, range: 0.1-168)
+- `MAX_TOTAL_INPUT_LENGTH` - Maximum total input length for AI context (default: 4000, range: 100-10000)
 
 ## Commands
 
