@@ -14,6 +14,10 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Cache for system prompt
+let systemPromptCache = null;
+let systemPromptLastModified = null;
+
 /**
  * Generates a random ID for blackbox messages
  * @returns {string} A random alphanumeric ID
@@ -23,27 +27,60 @@ function generateRandomId() {
 }
 
 /**
- * Reads and returns the system prompt from the markdown config file
+ * Reads and returns the system prompt from the markdown config file with caching
  * @returns {string} The system prompt content
  */
 function getSystemPrompt() {
     try {
         const configPath = path.join(__dirname, '..', 'config', 'system-prompt.md');
+        
+        // Check if file exists and get modification time
+        const stats = fs.statSync(configPath);
+        const lastModified = stats.mtime.getTime();
+        
+        // Return cached version if file hasn't been modified
+        if (systemPromptCache && systemPromptLastModified === lastModified) {
+            return systemPromptCache;
+        }
+        
+        // Read and parse the file
         const content = fs.readFileSync(configPath, 'utf8');
         
         // Extract content after the first heading
         const lines = content.split('\n');
         const startIndex = lines.findIndex(line => line.startsWith('# '));
         
+        let systemPrompt;
         if (startIndex !== -1 && startIndex + 2 < lines.length) {
-            return lines.slice(startIndex + 2).join('\n').trim();
+            systemPrompt = lines.slice(startIndex + 2).join('\n').trim();
+        } else {
+            // Fallback to default if parsing fails
+            systemPrompt = "You are LiberGPT. A helpful Assistant. Use the conversation history provided to give contextual responses.";
         }
         
-        // Fallback to default if parsing fails
-        return "You are LiberGPT. A helpful Assistant. Use the conversation history provided to give contextual responses.";
+        // Cache the result
+        systemPromptCache = systemPrompt;
+        systemPromptLastModified = lastModified;
+        
+        logger.info(`[fetchRequest] System prompt loaded and cached from config file`);
+        return systemPrompt;
+        
     } catch (error) {
         logger.warn(`[fetchRequest] Failed to read system prompt config: ${error.message}`);
-        return "You are LiberGPT. A helpful Assistant. Use the conversation history provided to give contextual responses.";
+        
+        // Return cached version if available, otherwise fallback to default
+        if (systemPromptCache) {
+            logger.info(`[fetchRequest] Using cached system prompt due to file read error`);
+            return systemPromptCache;
+        }
+        
+        const fallbackPrompt = "You are LiberGPT. A helpful Assistant. Use the conversation history provided to give contextual responses.";
+        
+        // Cache the fallback to avoid repeated file access attempts
+        systemPromptCache = fallbackPrompt;
+        systemPromptLastModified = Date.now();
+        
+        return fallbackPrompt;
     }
 }
 
