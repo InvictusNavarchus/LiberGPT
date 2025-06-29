@@ -226,8 +226,17 @@ class MemoryManager {
         // Set new timer for this channel
         const cleanupTimeoutMs = this.cleanupIntervalHours * 60 * 60 * 1000;
         const timer = setTimeout(() => {
-            logger.info(`[MemoryManager] Cleaning up inactive channel ${channelId} after ${this.cleanupIntervalHours} hours of inactivity`);
-            this.clearChannelMemory(channelId);
+            try {
+                // Check if the timer is still registered and channel still has memory
+                if (this.cleanupTimers.has(channelId) && this.channelMemories.has(channelId)) {
+                    logger.info(`[MemoryManager] Cleaning up inactive channel ${channelId} after ${this.cleanupIntervalHours} hours of inactivity`);
+                    this.clearChannelMemory(channelId);
+                } else {
+                    logger.debug(`[MemoryManager] Timer callback executed for channel ${channelId}, but channel was already cleaned up`);
+                }
+            } catch (error) {
+                logger.error(`[MemoryManager] Error in cleanup timer callback for channel ${channelId}: ${error.message}`, error);
+            }
         }, cleanupTimeoutMs);
 
         this.cleanupTimers.set(channelId, timer);
